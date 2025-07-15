@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: ['localhost'], // Agrega aquí los dominios de donde vendrán las imágenes
+  },
 };
 
 export default nextConfig;
