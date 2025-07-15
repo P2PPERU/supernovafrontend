@@ -24,8 +24,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, token, refreshToken) => {
+        // Guardar en cookies
         Cookies.set('token', token, { expires: 7 }); // 7 días
         Cookies.set('refreshToken', refreshToken, { expires: 30 }); // 30 días
+        
+        // Guardar en localStorage también
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', refreshToken);
         
         set({
           user,
@@ -36,8 +41,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Limpiar cookies
         Cookies.remove('token');
         Cookies.remove('refreshToken');
+        
+        // Limpiar localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         
         set({
           user: null,

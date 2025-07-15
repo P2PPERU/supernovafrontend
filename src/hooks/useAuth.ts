@@ -12,12 +12,31 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (data) => {
+      console.log('✅ Login successful:', data);
+      
+      // Verificar que tenemos los datos necesarios
+      if (!data.token || !data.user || !data.refreshToken) {
+        console.error('❌ Invalid login response structure');
+        toast.error('Error en la respuesta del servidor');
+        return;
+      }
+      
+      // Guardar en el store (que también guarda en cookies y localStorage)
       setAuth(data.user, data.token, data.refreshToken);
-      toast.success('¡Bienvenido!');
-      router.push('/dashboard');
+      
+      // Verificar que se guardó correctamente
+      setTimeout(() => {
+        const savedToken = localStorage.getItem('token');
+        console.log('🔍 Token saved in localStorage:', savedToken ? 'Yes' : 'No');
+        
+        toast.success('¡Bienvenido!');
+        router.push('/dashboard');
+      }, 100);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al iniciar sesión');
+      console.error('❌ Login error:', error);
+      const message = error.response?.data?.message || error.response?.data?.error || 'Error al iniciar sesión';
+      toast.error(message);
     },
   });
 };
