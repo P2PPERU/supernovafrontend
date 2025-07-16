@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { AuthDebug } from '@/components/debug/auth-debug';
+import { AdminFloatButton } from '@/components/admin/float-button';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -62,6 +63,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <AdminFloatButton />
           <AuthDebug />
         </Providers>
       </body>

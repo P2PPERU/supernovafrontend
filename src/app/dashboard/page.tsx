@@ -4,9 +4,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouletteStatus } from '@/hooks/useRoulette';
 import { formatCurrency, cn } from '@/lib/utils';
+import Link from 'next/link';
 import { 
   Trophy, 
   Gamepad2, 
@@ -15,7 +17,8 @@ import {
   Users, 
   ArrowRight,
   DollarSign,
-  Activity
+  Activity,
+  Shield
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -251,6 +254,70 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Admin-specific content */}
+      {(user.role === 'admin' || user.role === 'editor') && (
+        <Card className="mt-8 bg-gradient-to-br from-gray-900 to-gray-800 text-white border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-poker-gold" />
+              Panel de Administración
+            </CardTitle>
+            <CardDescription className="text-gray-300">
+              Accede a las herramientas administrativas del sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="bg-white/10 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Acciones Pendientes</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center justify-between">
+                    <span>Validaciones de ruleta</span>
+                    <Badge className="bg-poker-gold text-black">5</Badge>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span>Noticias en borrador</span>
+                    <Badge variant="secondary">3</Badge>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span>Reportes sin revisar</span>
+                    <Badge variant="secondary">12</Badge>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Estadísticas Rápidas</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center justify-between">
+                    <span>Usuarios nuevos hoy</span>
+                    <span className="font-semibold">24</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span>Ingresos del día</span>
+                    <span className="font-semibold">S/ 3,450</span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span>Tickets activos</span>
+                    <span className="font-semibold">8</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <Button 
+              size="lg"
+              className="w-full bg-poker-gold hover:bg-poker-gold/90 text-black" 
+              asChild
+            >
+              <Link href="/admin">
+                <Shield className="mr-2 h-5 w-5" />
+                Ir al Panel Administrativo
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Role-specific content */}
       {user.role === 'agent' && (
