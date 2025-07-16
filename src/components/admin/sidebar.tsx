@@ -9,6 +9,7 @@ import {
   Gift,
   Newspaper,
   Gamepad2,
+  Code2,           // ← añadido
   Trophy,
   BarChart3,
   Settings,
@@ -79,6 +80,12 @@ const menuItems = [
         badge: { text: '5', variant: 'destructive' as const },
       },
       {
+        title: 'Códigos',                // ← nuevo ítem
+        href: '/admin/roulette/codes',
+        icon: Code2,
+        badge: null,
+      },
+      {
         title: 'Estadísticas',
         href: '/admin/roulette/stats',
         icon: BarChart3,
@@ -132,9 +139,9 @@ export function AdminSidebar({ open, onOpenChange }: AdminSidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-gray-900 text-white transition-all duration-300",
-          open ? "w-64" : "w-20",
-          "lg:z-40" // En desktop no necesita tanto z-index
+          'fixed left-0 top-0 z-50 h-full bg-gray-900 text-white transition-all duration-300',
+          open ? 'w-64' : 'w-20',
+          'lg:z-40'
         )}
       >
         <div className="flex h-full flex-col">
@@ -181,22 +188,25 @@ export function AdminSidebar({ open, onOpenChange }: AdminSidebarProps) {
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href || 
+                      const isActive =
+                        pathname === item.href ||
                         (item.href !== '/admin' && pathname.startsWith(item.href));
-                      
+
                       return (
                         <Link
                           key={item.href}
                           href={item.href}
                           className={cn(
-                            "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                             isActive
-                              ? "bg-poker-green text-white"
-                              : "text-gray-300 hover:bg-gray-800 hover:text-white",
-                            !open && "justify-center"
+                              ? 'bg-poker-green text-white'
+                              : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                            !open && 'justify-center'
                           )}
                         >
-                          <Icon className={cn("h-5 w-5 flex-shrink-0", open && "mr-3")} />
+                          <Icon
+                            className={cn('h-5 w-5 flex-shrink-0', open && 'mr-3')}
+                          />
                           <AnimatePresence>
                             {open && (
                               <motion.span
@@ -231,11 +241,11 @@ export function AdminSidebar({ open, onOpenChange }: AdminSidebarProps) {
             <Link
               href="/dashboard"
               className={cn(
-                "flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white",
-                !open && "justify-center"
+                'flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white',
+                !open && 'justify-center'
               )}
             >
-              <ChevronRight className={cn("h-5 w-5", open && "mr-3")} />
+              <ChevronRight className={cn('h-5 w-5', open && 'mr-3')} />
               {open && <span>Volver al sitio</span>}
             </Link>
           </div>
