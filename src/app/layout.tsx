@@ -21,7 +21,41 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Remover atributos problemáticos de extensiones del navegador
+              if (typeof window !== 'undefined') {
+                const observer = new MutationObserver((mutations) => {
+                  mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes') {
+                      const target = mutation.target;
+                      if (target instanceof Element) {
+                        // Remover atributos de extensiones conocidas
+                        const badAttrs = ['bis_skin_checked', '__processed', 'bis_register'];
+                        badAttrs.forEach(attr => {
+                          if (target.hasAttribute(attr)) {
+                            target.removeAttribute(attr);
+                          }
+                        });
+                      }
+                    }
+                  });
+                });
+                
+                // Observar cambios en todo el documento
+                observer.observe(document.documentElement, {
+                  attributes: true,
+                  subtree: true,
+                  attributeFilter: ['bis_skin_checked', '__processed', 'bis_register']
+                });
+              }
+            `,
+          }}
+        />
+      </head>
+      <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Header />

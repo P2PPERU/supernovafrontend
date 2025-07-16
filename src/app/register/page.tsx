@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Eye, EyeOff, UserPlus, Users } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { authService } from '@/services/auth.service';
+import { authService, type Affiliate } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { toast } from 'sonner';
 
@@ -40,10 +40,12 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [affiliates, setAffiliates] = useState<any[]>([]);
+  const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingAffiliates, setLoadingAffiliates] = useState(true);
 
   const {
     register,
@@ -54,16 +56,28 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
   // Cargar lista de afiliados
   useEffect(() => {
     const loadAffiliates = async () => {
       try {
+        setLoadingAffiliates(true);
         const response = await authService.getAffiliates();
-        if (response.success) {
-          setAffiliates(response.affiliates || []);
+        console.log('Affiliates loaded:', response); // Debug
+        if (response.success && Array.isArray(response.affiliates)) {
+          setAffiliates(response.affiliates);
         }
       } catch (error) {
         console.error('Error loading affiliates:', error);
+        // No mostrar error, es opcional
+      } finally {
+        setLoadingAffiliates(false);
       }
     };
     loadAffiliates();
@@ -72,7 +86,13 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const response = await authService.register(data);
+      // Limpiar affiliateId si es "none"
+      const submitData = {
+        ...data,
+        affiliateId: data.affiliateId === 'none' ? undefined : data.affiliateId
+      };
+      
+      const response = await authService.register(submitData);
       if (response.success) {
         setAuth(response.user, response.token, response.refreshToken);
         toast.success('¡Cuenta creada exitosamente!');
@@ -83,6 +103,19 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Función helper para obtener el nombre display del afiliado
+  const getAffiliateDisplayName = (affiliate: Affiliate) => {
+    const fullName = affiliate.profile_data?.firstName 
+      ? `${affiliate.profile_data.firstName} ${affiliate.profile_data.lastName || ''}`.trim()
+      : null;
+    
+    return fullName || affiliate.username;
+  };
+
+  const getAffiliateCode = (affiliate: Affiliate) => {
+    return affiliate.affiliateProfile?.affiliate_code || 'N/A';
   };
 
   return (
@@ -123,6 +156,7 @@ export default function RegisterPage() {
                     placeholder="Tu nombre"
                     {...register('firstName')}
                     className={errors.firstName ? 'border-red-500' : ''}
+                    autoComplete="given-name"
                   />
                   {errors.firstName && (
                     <p className="text-sm text-red-500">{errors.firstName.message}</p>
@@ -137,6 +171,7 @@ export default function RegisterPage() {
                     placeholder="Tu apellido"
                     {...register('lastName')}
                     className={errors.lastName ? 'border-red-500' : ''}
+                    autoComplete="family-name"
                   />
                   {errors.lastName && (
                     <p className="text-sm text-red-500">{errors.lastName.message}</p>
@@ -153,6 +188,7 @@ export default function RegisterPage() {
                   placeholder="Elige un nombre de usuario"
                   {...register('username')}
                   className={errors.username ? 'border-red-500' : ''}
+                  autoComplete="username"
                 />
                 {errors.username && (
                   <p className="text-sm text-red-500">{errors.username.message}</p>
@@ -167,6 +203,7 @@ export default function RegisterPage() {
                   placeholder="tu@email.com"
                   {...register('email')}
                   className={errors.email ? 'border-red-500' : ''}
+                  autoComplete="email"
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -180,6 +217,7 @@ export default function RegisterPage() {
                   type="tel"
                   placeholder="+51 999 999 999"
                   {...register('phone')}
+                  autoComplete="tel"
                 />
               </div>
 
@@ -194,6 +232,7 @@ export default function RegisterPage() {
                       placeholder="Mínimo 6 caracteres"
                       {...register('password')}
                       className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -221,6 +260,7 @@ export default function RegisterPage() {
                       placeholder="Repite tu contraseña"
                       {...register('confirmPassword')}
                       className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -241,21 +281,32 @@ export default function RegisterPage() {
               </div>
 
               {/* Afiliado */}
-              {affiliates.length > 0 && (
+              {!loadingAffiliates && affiliates.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="affiliateId">
                     <Users className="inline-block h-4 w-4 mr-1" />
                     Código de Afiliado (opcional)
                   </Label>
-                  <Select onValueChange={(value) => setValue('affiliateId', value)}>
+                  <Select 
+                    onValueChange={(value) => {
+                      setValue('affiliateId', value === 'none' ? undefined : value);
+                    }}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un afiliado" />
+                      <SelectValue placeholder="Selecciona un afiliado (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin afiliado</SelectItem>
+                      <SelectItem value="none">
+                        <span className="text-gray-500">Sin afiliado</span>
+                      </SelectItem>
                       {affiliates.map((affiliate) => (
                         <SelectItem key={affiliate.id} value={affiliate.id}>
-                          {affiliate.name} - {affiliate.code}
+                          <div className="flex items-center justify-between w-full">
+                            <span>{getAffiliateDisplayName(affiliate)}</span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              [{getAffiliateCode(affiliate)}]
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -294,7 +345,10 @@ export default function RegisterPage() {
                 disabled={isSubmitting || isLoading}
               >
                 {isLoading ? (
-                  <>Creando cuenta...</>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creando cuenta...
+                  </>
                 ) : (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
