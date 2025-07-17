@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,8 @@ import {
   Star,
   TrendingUp,
   Clock,
-  Crown
+  Crown,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,7 +46,7 @@ interface Prize {
 
 export default function RoulettePage() {
   const { user } = useAuthStore();
-  const { data: status, isLoading: statusLoading } = useRouletteStatus();
+  const { data: status, isLoading: statusLoading, error: statusError } = useRouletteStatus();
   const spinMutation = useRouletteSpin();
   
   const [isSpinning, setIsSpinning] = useState(false);
@@ -73,14 +74,40 @@ export default function RoulettePage() {
     }
   };
 
-  const canSpin = status?.status?.hasDemoAvailable || status?.status?.hasRealAvailable || ((status?.status?.availableBonusSpins ?? 0) > 0);
+  // Mejorar la lógica de disponibilidad con validaciones más claras
+  const statusData = status?.status;
+  
+  const canSpin = Boolean(
+    statusData?.has_demo_available || 
+    statusData?.has_real_available || 
+    (statusData?.available_bonus_spins && statusData.available_bonus_spins > 0)
+  );
   
   const getSpinType = () => {
-    if (status?.status?.hasRealAvailable) return 'real';
-    if (status?.status?.hasDemoAvailable) return 'demo';
-    if ((status?.status?.availableBonusSpins ?? 0) > 0) return 'bonus';
+    if (!statusData) return null;
+    
+    // Prioridad: real > bonus > demo
+    if (statusData.has_real_available) return 'real';
+    if (statusData.available_bonus_spins && statusData.available_bonus_spins > 0) return 'bonus';
+    if (statusData.has_demo_available) return 'demo';
+    
     return null;
   };
+  
+  // Debug info
+  useEffect(() => {
+    if (statusData) {
+      console.log('🎮 Roulette Status Update:', {
+        canSpin,
+        spinType: getSpinType(),
+        demoAvailable: statusData.has_demo_available,
+        realAvailable: statusData.has_real_available,
+        bonusSpins: statusData.available_bonus_spins,
+        demoSpinDone: statusData.demo_spin_done,
+        isValidated: statusData.is_validated
+      });
+    }
+  }, [statusData, canSpin]);
 
   const spinType = getSpinType();
 
@@ -135,6 +162,27 @@ export default function RoulettePage() {
           </div>
         </motion.div>
 
+        {/* Mensaje de error si falla la carga */}
+        {statusError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-5 w-5" />
+                  <p className="font-medium">Error al cargar el estado de la ruleta</p>
+                </div>
+                <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1">
+                  Por favor, recarga la página o intenta más tarde.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Status Cards con diseño premium */}
         <motion.div 
           variants={containerVariants}
@@ -173,15 +221,15 @@ export default function RoulettePage() {
                   <div>
                     <p className="text-sm text-gray-400">Giros Disponibles</p>
                     <div className="flex items-center gap-2 mt-2">
-                      {status?.status?.hasDemoAvailable && (
+                      {status?.status?.has_demo_available && (
                         <Badge className="bg-gray-600 text-white">Demo</Badge>
                       )}
-                      {status?.status?.hasRealAvailable && (
+                      {status?.status?.has_real_available && (
                         <Badge className="bg-poker-green text-white">Real</Badge>
                       )}
-                      {(status?.status?.availableBonusSpins ?? 0) > 0 && (
+                      {(status?.status?.available_bonus_spins ?? 0) > 0 && (
                         <Badge className="bg-purple-600 text-white">
-                          Bonus x{status?.status?.availableBonusSpins ?? 0}
+                          Bonus x{status?.status?.available_bonus_spins ?? 0}
                         </Badge>
                       )}
                       {!canSpin && (
@@ -209,7 +257,7 @@ export default function RoulettePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-400">Total de Giros</p>
-                    <p className="text-3xl font-bold text-white">{status?.status?.totalSpins || 0}</p>
+                    <p className="text-3xl font-bold text-white">{status?.status?.total_spins || 0}</p>
                     <p className="text-xs text-poker-red mt-1">Ranking #127</p>
                   </div>
                   <div className="relative">
@@ -328,7 +376,7 @@ export default function RoulettePage() {
                               >
                                 {spinType === 'demo' && '🎮 Este es un giro de demostración'}
                                 {spinType === 'real' && '💰 ¡Giro real con premios reales!'}
-                                {spinType === 'bonus' && `🎁 Tienes ${status?.status?.availableBonusSpins ?? 0} giros bonus`}
+                                {spinType === 'bonus' && `🎁 Tienes ${status?.status?.available_bonus_spins ?? 0} giros bonus`}
                               </motion.p>
                             )}
                           </AnimatePresence>
@@ -343,7 +391,7 @@ export default function RoulettePage() {
               <div className="space-y-4">
                 {/* Premio Demo */}
                 <AnimatePresence>
-                  {status?.status?.demoPrize && !status?.status?.isValidated && (
+                  {status?.status?.demo_prize && !status?.status?.is_validated && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -359,7 +407,7 @@ export default function RoulettePage() {
                         <CardContent>
                           <div className="text-center">
                             <p className="text-3xl font-bold text-poker-gold mb-2">
-                              {status?.status?.demoPrize?.name}
+                              {status?.status?.demo_prize?.name}
                             </p>
                             <p className="text-sm text-gray-300">
                               ¡Completa la validación para obtener tu giro real!
@@ -464,6 +512,28 @@ export default function RoulettePage() {
           prize={lastPrize}
         />
       </div>
+
+      {/* Debug Panel - Eliminar en producción */}
+      {process.env.NODE_ENV === 'development' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed bottom-4 left-4 bg-black/80 text-white p-4 rounded-lg max-w-sm z-50"
+        >
+          <h3 className="font-bold mb-2">🐛 Debug Panel</h3>
+          <div className="text-xs space-y-1">
+            <p>Loading: {statusLoading ? '✅' : '❌'}</p>
+            <p>Has Status: {status?.status ? '✅' : '❌'}</p>
+            <p>Demo Available: {status?.status?.has_demo_available ? '✅' : '❌'}</p>
+            <p>Real Available: {status?.status?.has_real_available ? '✅' : '❌'}</p>
+            <p>Bonus Spins: {status?.status?.available_bonus_spins || 0}</p>
+            <p>Can Spin: {canSpin ? '✅' : '❌'}</p>
+            <p>Spin Type: {getSpinType() || 'none'}</p>
+            <p>Is Validated: {status?.status?.is_validated ? '✅' : '❌'}</p>
+            <p>Demo Done: {status?.status?.demo_spin_done ? '✅' : '❌'}</p>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

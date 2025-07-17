@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { LoginRequest } from '@/types';
@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation';
 
 export const useLogin = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   return useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('✅ Login successful:', data);
       
       // Verificar que tenemos los datos necesarios
@@ -23,6 +24,9 @@ export const useLogin = () => {
       
       // Guardar en el store (que también guarda en cookies y localStorage)
       setAuth(data.user, data.token, data.refreshToken);
+      
+      // Invalidar y refetch el estado de la ruleta
+      await queryClient.invalidateQueries({ queryKey: ['roulette-status'] });
       
       // Verificar que se guardó correctamente
       setTimeout(() => {

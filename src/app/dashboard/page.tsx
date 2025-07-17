@@ -37,13 +37,13 @@ export default function DashboardPage() {
   const quickActions = [
     {
       title: 'Girar Ruleta',
-      description: rouletteStatus?.status?.hasRealAvailable 
+      description: rouletteStatus?.status?.has_real_available 
         ? 'Tienes giros disponibles' 
         : 'Gira la ruleta demo',
       icon: Gamepad2,
       color: 'text-poker-gold',
       href: '/roulette',
-      badge: rouletteStatus?.status?.hasRealAvailable ? 'Nuevo' : null,
+      badge: rouletteStatus?.status?.has_real_available ? 'Nuevo' : null,
     },
     {
       title: 'Ver Rankings',
@@ -78,10 +78,10 @@ export default function DashboardPage() {
     },
     {
       label: 'Giros Disponibles',
-      value: rouletteStatus?.status?.availableBonusSpins || 0,
+      value: rouletteStatus?.status?.available_bonus_spins || 0,
       icon: Gamepad2,
-      change: rouletteStatus?.status?.hasRealAvailable ? 'Activo' : 'Demo',
-      trend: rouletteStatus?.status?.hasRealAvailable ? 'up' : 'neutral',
+      change: rouletteStatus?.status?.has_real_available ? 'Activo' : 'Demo',
+      trend: rouletteStatus?.status?.has_real_available ? 'up' : 'neutral',
     },
     {
       label: 'Posición Ranking',

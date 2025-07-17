@@ -1,4 +1,4 @@
-// User types
+// User Types
 export interface User {
   id: string;
   username: string;
@@ -6,6 +6,7 @@ export interface User {
   role: 'admin' | 'agent' | 'editor' | 'client';
   balance: number;
   isActive: boolean;
+  parentAgentId?: string;
   profile?: UserProfile;
   createdAt: string;
   updatedAt: string;
@@ -18,48 +19,86 @@ export interface UserProfile {
   avatar?: string;
 }
 
-// Auth types
+// Auth Types
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  affiliateId?: string;
+}
+
 export interface AuthResponse {
-  success: boolean;
   token: string;
   refreshToken: string;
   user: User;
 }
 
-// News types
+// News Types
 export interface News {
   id: string;
   title: string;
+  slug: string;
   content: string;
-  summary?: string;
-  category: 'general' | 'tournament' | 'promotion' | 'update';
+  excerpt?: string;
+  category: string;
   status: 'draft' | 'published' | 'archived';
   featured: boolean;
-  imageUrl?: string;
-  views: number;
-  author: User;
+  featuredImage?: string;
+  authorId: string;
+  author?: User;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Roulette types
-export interface RoulettePrize {
+// Ranking Types
+export interface Ranking {
   id: string;
+  playerId: string;
+  player?: User;
+  type: 'points' | 'hands_played' | 'tournaments' | 'rake';
+  points: number;
+  handsPlayed: number;
+  tournamentsPlayed: number;
+  totalRake: number;
+  wins: number;
+  losses: number;
+  season: string;
+  period: 'all_time' | 'monthly' | 'weekly' | 'daily';
+  position: number;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Roulette Types - ACTUALIZADO A SNAKE_CASE
+export interface SpinStatus {
+  has_demo_available: boolean;
+  has_real_available: boolean;
+  demo_spin_done: boolean;
+  real_spin_done: boolean;
+  is_validated: boolean;
+  total_spins: number;
+  available_bonus_spins: number;
+  demo_prize?: RoulettePrize;
+}
+
+export interface RoulettePrize {
+  id?: string;
   name: string;
   description?: string;
-  prizeType: string;
-  prizeBehavior: 'instant_cash' | 'bonus' | 'manual' | 'custom';
-  prizeValue: number;
-  probability: number;
-  color: string;
-  position: number;
-  isActive: boolean;
+  prize_type: string;
+  prize_value: number;
+  color?: string;
+  icon?: string;
 }
 
 export interface RouletteSpinResult {
@@ -67,70 +106,40 @@ export interface RouletteSpinResult {
   type: 'demo' | 'welcome_real' | 'code' | 'bonus';
   isReal: boolean;
   prize: RoulettePrize;
-  message: string;
+  message?: string;
 }
 
-export interface SpinStatus {
-  hasDemoAvailable: boolean;
-  hasRealAvailable: boolean;
-  demoSpinDone: boolean;
-  realSpinDone: boolean;
-  isValidated: boolean;
-  totalSpins: number;
-  availableBonusSpins: number;
-  demoPrize?: RoulettePrize;
-}
-
-// Ranking types
-export interface Ranking {
-  id: string;
-  playerId?: string;
-  externalPlayerName?: string;
-  externalPlayerEmail?: string;
-  type: 'points' | 'hands_played' | 'tournaments' | 'rake';
-  season: string;
-  period: 'all_time' | 'monthly' | 'weekly' | 'daily';
-  position: number;
-  points: number;
-  handsPlayed: number;
-  tournamentsPlayed: number;
-  totalRake: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-  isVisible: boolean;
-  player?: User;
-}
-
-// Bonus types
+// Bonus Types
 export interface Bonus {
   id: string;
   name: string;
   description?: string;
-  type: 'welcome' | 'deposit' | 'referral' | 'achievement' | 'custom';
-  amount: number;
+  type: 'welcome' | 'deposit' | 'referral' | 'achievement' | 'custom' | 'roulette_spin';
+  status: 'pending' | 'active' | 'claimed' | 'expired';
+  amount?: number;
   percentage?: number;
   minDeposit?: number;
   maxBonus?: number;
-  status: 'pending' | 'active' | 'claimed' | 'expired';
   validUntil?: string;
   assignedTo: string;
   assignedBy: string;
+  claimedAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
-// API Response types
-export interface ApiResponse<T> {
+// Common Types
+export interface PaginatedResponse<T> {
+  data: T[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+}
+
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
-}
-
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  totalPages: number;
-  currentPage: number;
-  total: number;
 }

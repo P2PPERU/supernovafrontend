@@ -5,7 +5,32 @@ import { toast } from 'sonner';
 export const useRouletteStatus = () => {
   return useQuery({
     queryKey: ['roulette-status'],
-    queryFn: rouletteService.getMyStatus,
+    queryFn: async () => {
+      console.log('🎰 Fetching roulette status...');
+      const response = await rouletteService.getMyStatus();
+      console.log('✅ Roulette status response:', response);
+      
+      // Validar estructura de respuesta
+      if (!response.status) {
+        console.error('❌ Invalid roulette status structure:', response);
+        throw new Error('Invalid status response');
+      }
+      
+      // Log detallado del estado
+      console.log('📊 Status details:', {
+        hasDemoAvailable: response.status.has_demo_available,
+        hasRealAvailable: response.status.has_real_available,
+        demoSpinDone: response.status.demo_spin_done,
+        realSpinDone: response.status.real_spin_done,
+        isValidated: response.status.is_validated,
+        availableBonusSpins: response.status.available_bonus_spins,
+        totalSpins: response.status.total_spins
+      });
+      
+      return response;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 
