@@ -83,7 +83,7 @@ export function ProbabilityAdjuster({ prizes, open, onClose }: ProbabilityAdjust
 
   const handleSave = () => {
     const probabilities = adjustedPrizes.map(p => ({
-      id: p.id,
+      id: p.id,  // Usar 'id' en lugar de 'prize_id'
       probability: p.probability
     }));
 

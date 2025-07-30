@@ -53,18 +53,23 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        poker: {
-          green: "#2D6A4F",
-          darkGreen: "#1B5E3F",
-          red: "#DC2626",
-          gold: "#F59E0B",
-          black: "#0F172A",
-        }
+        // Colores de poker usando variables CSS
+        "poker-green": "hsl(var(--poker-green))",
+        "poker-darkGreen": "hsl(var(--poker-darkGreen))",
+        "poker-red": "hsl(var(--poker-red))",
+        "poker-gold": "hsl(var(--poker-gold))",
+        "poker-purple": "hsl(var(--poker-purple))",
+        "poker-blue": "hsl(var(--poker-blue))",
+        "poker-black": "#0F172A",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       keyframes: {
         "accordion-down": {
@@ -75,10 +80,31 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.4)' },
+          '50%': { boxShadow: '0 0 40px rgba(34, 197, 94, 0.8)' },
+        },
+        'gradient-shift': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        shine: {
+          '0%': { transform: 'translateX(-100%) translateY(-100%) rotate(45deg)' },
+          '100%': { transform: 'translateX(100%) translateY(100%) rotate(45deg)' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        float: "float 3s ease-in-out infinite",
+        'pulse-glow': "pulse-glow 2s ease-in-out infinite",
+        'gradient-shift': "gradient-shift 4s ease infinite",
+        shine: "shine 3s infinite",
       },
     },
   },

@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { useAdminPrize, useUpdatePrize } from '@/hooks/admin/useRoulette';
-import { ArrowLeft, Save, Gamepad2, Info, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAdminPrize, useUpdatePrize, useAdminPrizes } from '@/hooks/admin/useRoulette';
+import { ArrowLeft, Save, Gamepad2, Info, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const updatePrizeSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
@@ -67,8 +69,16 @@ const PRESET_COLORS = [
 export default function EditPrizePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [probability, setProbability] = useState(5);
+  const [showProbabilityWarning, setShowProbabilityWarning] = useState(false);
+  const [originalProbability, setOriginalProbability] = useState(0);
+  
   const { data: prizeData, isLoading } = useAdminPrize(params.id);
+  const { data: allPrizesData } = useAdminPrizes();
   const updatePrize = useUpdatePrize();
+
+  const allPrizes = allPrizesData?.prizes || [];
+  const activePrizes = allPrizes.filter((p: any) => p.isActive && p.id !== params.id);
+  const currentTotalProbability = activePrizes.reduce((sum: number, p: any) => sum + p.probability, 0);
 
   const {
     register,
@@ -83,6 +93,7 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
 
   const selectedType = watch('prize_type');
   const selectedColor = watch('color');
+  const isActive = watch('isActive');
 
   // Cargar datos del premio cuando estén disponibles
   useEffect(() => {
@@ -102,10 +113,48 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
         isActive: prize.isActive,
       });
       setProbability(prize.probability);
+      setOriginalProbability(prize.probability);
     }
   }, [prizeData, reset]);
 
+  // Verificar probabilidad cuando cambia
+  useEffect(() => {
+    if (isActive) {
+      const newTotal = currentTotalProbability + probability;
+      setShowProbabilityWarning(newTotal > 100 || Math.abs(newTotal - 100) > 0.01);
+    } else {
+      setShowProbabilityWarning(false);
+    }
+  }, [probability, currentTotalProbability, isActive]);
+
   const onSubmit = (data: UpdatePrizeFormData) => {
+    // Solo validar si el premio está activo
+    if (data.isActive) {
+      const newTotal = currentTotalProbability + data.probability;
+      
+      if (newTotal > 100) {
+        toast.error(
+          `La suma de probabilidades sería ${newTotal.toFixed(2)}%. El máximo permitido es 100%.`,
+          {
+            description: `Actualmente hay ${currentTotalProbability.toFixed(2)}% asignado en otros premios.`,
+            duration: 5000,
+          }
+        );
+        return;
+      }
+      
+      // Advertencia si no suma 100%
+      if (Math.abs(newTotal - 100) > 0.01) {
+        toast.warning(
+          `La suma total será ${newTotal.toFixed(2)}%`,
+          {
+            description: 'Recuerda ajustar las probabilidades para que sumen exactamente 100%.',
+            duration: 5000,
+          }
+        );
+      }
+    }
+    
     updatePrize.mutate({ id: params.id, data });
   };
 
@@ -148,9 +197,52 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
+      {/* Alerta de probabilidades */}
+      {isActive && currentTotalProbability > 0 && (
+        <Alert className={showProbabilityWarning ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20' : ''}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <p className="font-medium">
+                Probabilidad total de otros premios activos: {currentTotalProbability.toFixed(2)}%
+              </p>
+              <p className="text-sm">
+                {100 - currentTotalProbability > 0 
+                  ? `Puedes asignar hasta ${(100 - currentTotalProbability).toFixed(2)}% a este premio.`
+                  : 'Ya tienes el 100% asignado en otros premios. Deberás reducir otras probabilidades primero.'
+                }
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-6">
+          {/* Estado del premio */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Estado del Premio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="isActive">Premio activo</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Los premios inactivos no aparecen en la ruleta
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  {...register('isActive')}
+                  className="h-5 w-5"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Información básica */}
           <Card>
             <CardHeader>
@@ -325,7 +417,7 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
                 <Slider
                   id="probability"
                   min={0.1}
-                  max={50}
+                  max={isActive ? Math.min(50, 100 - currentTotalProbability + 0.1) : 50}
                   step={0.1}
                   value={[probability]}
                   onValueChange={(value) => {
@@ -333,10 +425,18 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
                     setValue('probability', value[0]);
                   }}
                   className="w-full"
+                  disabled={!isActive}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Define qué tan probable es que salga este premio
-                </p>
+                {isActive ? (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0.1%</span>
+                    <span>Máximo: {(100 - currentTotalProbability).toFixed(1)}%</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Activa el premio para ajustar la probabilidad
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -395,7 +495,13 @@ export default function EditPrizePage({ params }: { params: { id: string } }) {
             <Button variant="outline" asChild>
               <Link href="/admin/roulette/prizes">Cancelar</Link>
             </Button>
-            <Button type="submit" disabled={updatePrize.isPending}>
+            <Button 
+              type="submit" 
+              disabled={
+                updatePrize.isPending ||
+                (isActive && currentTotalProbability + probability > 100)
+              }
+            >
               {updatePrize.isPending ? (
                 <>Guardando...</>
               ) : (

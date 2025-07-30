@@ -164,7 +164,7 @@ export default function AdminPrizesPage() {
 
   const handleAutoAdjust = () => {
     const adjustedPrizes = activePrizes.map((prize: RoulettePrize) => ({
-      id: prize.id,
+      id: prize.id,  // Usar 'id' en lugar de 'prize_id'
       probability: parseFloat((prize.probability * (100 / totalProbability)).toFixed(2))
     }));
 

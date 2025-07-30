@@ -93,7 +93,8 @@ export default function RegisterPage() {
       };
       
       const response = await authService.register(submitData);
-      if (response.success) {
+      // Assuming a successful registration returns a user and tokens
+      if (response.user && response.token && response.refreshToken) {
         setAuth(response.user, response.token, response.refreshToken);
         toast.success('¡Cuenta creada exitosamente!');
         router.push('/dashboard');
