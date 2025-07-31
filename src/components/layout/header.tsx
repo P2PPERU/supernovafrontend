@@ -94,7 +94,7 @@ export function Header() {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass">
                   <Wallet className="h-4 w-4 text-poker-gold" />
                   <span className="font-semibold text-poker-gold">
-                    ${user?.balance?.toFixed(2) || '0.00'}
+                    ${Number(user?.balance || 0).toFixed(2)}
                   </span>
                 </div>
 
@@ -235,7 +235,7 @@ export function Header() {
                             <div className="flex items-center gap-2 mt-1">
                               <Wallet className="h-3 w-3 text-poker-gold" />
                               <span className="text-sm font-semibold text-poker-gold">
-                                ${user?.balance?.toFixed(2) || '0.00'}
+                                ${Number(user?.balance || 0).toFixed(2)}
                               </span>
                             </div>
                           </div>

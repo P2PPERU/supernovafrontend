@@ -32,7 +32,7 @@ const rooms = [
     players: '3.1K',
     features: ['Más Popular', 'Gran Variedad', 'Bonos Semanales'],
     badge: 'Más Popular',
-    badgeColor: 'bg-green-500',
+    badgeColor: 'bg-red-500',
   },
   {
     id: 'pppoker',
@@ -40,12 +40,12 @@ const rooms = [
     logo: '♥',
     color: 'from-green-600 to-green-800',
     bonus: 'Bono $600',
-    rakeback: '35% Rakeback',
+    rakeback: '50% Rakeback',
     rating: 4.6,
     players: '1.8K',
-    features: ['Mejor App', 'Torneos Gratis', 'Comunidad Activa'],
+    features: ['Mejor App', 'Torneos 24/7', 'Comunidad Activa'],
     badge: 'Mejor App',
-    badgeColor: 'bg-blue-500',
+    badgeColor: 'bg-green-500',
   },
   {
     id: 'wpt',
@@ -53,11 +53,11 @@ const rooms = [
     logo: '♦',
     color: 'from-blue-600 to-blue-800',
     bonus: 'Bono $1200',
-    rakeback: '45% Rakeback',
+    rakeback: '20% Rakeback',
     rating: 4.9,
     players: '2.7K',
-    features: ['Torneos Premium', 'Eventos Exclusivos', 'VIP Program'],
-    badge: 'Torneos Premium',
+    features: ['Mejor Cash Game Premium', 'Eventos Exclusivos', 'Soporte VIP'],
+    badge: 'Cash Game TOP',
     badgeColor: 'bg-blue-500',
   },
 ];
@@ -209,16 +209,13 @@ export function FeaturedRooms() {
                   Bono de Bienvenida Exclusivo
                 </h3>
                 <p className="text-xl text-gray-400 mb-6">
-                  Registrate ahora y recibe hasta <span className="text-poker-green font-bold">$2000 en bonos</span> + 
+                  Registrate ahora y recibe <span className="text-poker-green font-bold">giros gratis en nuestra ruleta</span> + 
                   <span className="text-poker-gold font-bold"> 50% rakeback</span> en tu primera sala
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Button size="lg" className="bg-poker-green hover:bg-poker-darkGreen">
                     <Gift className="mr-2 h-5 w-5" />
                     Reclamar Bono
-                  </Button>
-                  <Button size="lg" variant="outline" className="border-white/20 hover:bg-white/10">
-                    Ver Términos
                   </Button>
                 </div>
               </div>

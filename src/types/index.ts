@@ -41,19 +41,24 @@ export interface AuthResponse {
   user: User;
 }
 
-// News Types
+// News Types - ACTUALIZADO
 export interface News {
   id: string;
   title: string;
   slug: string;
   content: string;
   excerpt?: string;
+  summary?: string; // Nuevo
   category: string;
+  tags?: string[]; // Nuevo
   status: 'draft' | 'published' | 'archived';
   featured: boolean;
   featuredImage?: string;
+  imageUrl?: string; // Nuevo
   authorId: string;
   author?: User;
+  views?: number; // Nuevo
+  readTime?: number; // Nuevo - en minutos
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
