@@ -34,7 +34,10 @@ export const useCreateNews = () => {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: adminNewsService.createNews,
+    mutationFn: (data: any) => {
+      console.log('📝 Creating news with data:', data);
+      return adminNewsService.createNews(data);
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-news'] });
       queryClient.invalidateQueries({ queryKey: ['admin-news-stats'] });
@@ -52,6 +55,7 @@ export const useCreateNews = () => {
       }
     },
     onError: (error: any) => {
+      console.error('❌ Error creating news:', error.response?.data || error);
       toast.error(error.response?.data?.message || 'Error al crear noticia');
     },
   });

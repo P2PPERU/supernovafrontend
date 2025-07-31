@@ -108,10 +108,26 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
   }, [news, reset]);
 
   const handleFormSubmit = (data: NewsFormData) => {
-    onSubmit({
+    // Solo incluir la imagen si hay una nueva
+    const submitData: any = {
       ...data,
-      image: image || undefined,
-    });
+    };
+    
+    if (image) {
+      submitData.image = image;
+    }
+    
+    onSubmit(submitData);
+  };
+
+  const handleSaveAsDraft = () => {
+    setValue('status', 'draft');
+    handleSubmit(handleFormSubmit)();
+  };
+
+  const handlePublish = () => {
+    setValue('status', 'published');
+    handleSubmit(handleFormSubmit)();
   };
 
   const handleAddTag = () => {
@@ -390,18 +406,18 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
           </div>
           <div className="flex gap-3">
             <Button
-              type="submit"
+              type="button"
               variant="outline"
               disabled={isLoading}
-              onClick={() => setValue('status', 'draft')}
+              onClick={handleSaveAsDraft}
             >
               <Save className="mr-2 h-4 w-4" />
               Guardar Borrador
             </Button>
             <Button
-              type="submit"
+              type="button"
               disabled={isLoading}
-              onClick={() => setValue('status', 'published')}
+              onClick={handlePublish}
             >
               <Send className="mr-2 h-4 w-4" />
               {watchedValues.status === 'published' ? 'Actualizar' : 'Publicar'}

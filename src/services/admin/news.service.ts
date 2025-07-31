@@ -81,9 +81,15 @@ export const adminNewsService = {
     if (data.summary) formData.append('summary', data.summary);
     formData.append('category', data.category);
     formData.append('status', data.status || 'draft');
-    if (data.tags) formData.append('tags', JSON.stringify(data.tags));
+    if (data.tags && data.tags.length > 0) {
+      formData.append('tags', JSON.stringify(data.tags));
+    }
     formData.append('featured', String(data.featured || false));
-    if (data.image) formData.append('image', data.image);
+    
+    // Solo agregar imagen si existe
+    if (data.image) {
+      formData.append('image', data.image);
+    }
 
     const response = await api.post('/news', formData, {
       headers: {

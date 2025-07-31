@@ -166,12 +166,25 @@ export function ImageUpload({
           >
             <Card className="relative overflow-hidden">
               <div className="relative h-64 bg-gray-100 dark:bg-gray-800">
-                <Image
-                  src={preview || currentImageUrl || ''}
-                  alt="Preview"
-                  fill
-                  className="object-contain"
-                />
+                {preview ? (
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    fill
+                    className="object-contain"
+                  />
+                ) : currentImageUrl ? (
+                  <Image
+                    src={currentImageUrl}
+                    alt="Preview"
+                    fill
+                    className="object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <ImageIcon className="h-16 w-16 text-gray-400" />
+                  </div>
+                )}
               </div>
               
               <div className="absolute top-2 right-2 flex gap-2">
