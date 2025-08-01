@@ -113,8 +113,14 @@ export const adminNewsService = {
     console.log('📋 Status being sent:', data.status || 'draft');
     
     if (data.tags && data.tags.length > 0) {
-      data.tags.forEach(tag => formData.append('tags[]', tag));
+      // Solo enviar tags si hay al menos uno y no está vacío
+      data.tags.forEach(tag => {
+        if (tag && tag.trim().length >= 2) {
+          formData.append('tags[]', tag.trim());
+        }
+      });
     }
+    // Si no hay tags válidos, no enviar el campo tags[]
     formData.append('featured', String(data.featured || false));
     
     if (data.image) {
@@ -147,13 +153,15 @@ export const adminNewsService = {
       formData.append('status', data.status);
       console.log('📋 Status being updated to:', data.status);
     }
-    if (data.tags !== undefined) {
-      if (Array.isArray(data.tags) && data.tags.length > 0) {
-      data.tags.forEach(tag => formData.append('tags[]', tag));
-      } else {
-      formData.append('tags[]', '');
-      }
+    if (data.tags !== undefined && Array.isArray(data.tags) && data.tags.length > 0) {
+      // Solo enviar tags si hay al menos uno y no está vacío
+      data.tags.forEach(tag => {
+        if (tag && tag.trim().length >= 2) {
+          formData.append('tags[]', tag.trim());
+        }
+      });
     }
+    // Si no hay tags válidos, no enviar el campo tags[]
     if (data.featured !== undefined) formData.append('featured', String(data.featured));
     if (data.image) formData.append('image', data.image);
 

@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload } from './image-upload';
 import { RichTextEditor } from './rich-text-editor';
 import { News } from '@/types';
+import { toast } from 'sonner';
 import { 
   Save, 
   Send, 
@@ -135,6 +136,18 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
 
   const handleAddTag = () => {
     const trimmedTag = tagInput.trim();
+    
+    // Validar longitud del tag
+    if (trimmedTag.length < 2) {
+      toast.error('El tag debe tener al menos 2 caracteres');
+      return;
+    }
+    
+    if (trimmedTag.length > 30) {
+      toast.error('El tag no puede tener más de 30 caracteres');
+      return;
+    }
+    
     if (trimmedTag && !watchedValues.tags.includes(trimmedTag)) {
       setValue('tags', [...watchedValues.tags, trimmedTag]);
       setTagInput('');
@@ -286,22 +299,43 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
-                <Input
-                  placeholder="Nueva etiqueta..."
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
+                <div className="flex-1">
+                  <Input
+                    placeholder="Nueva etiqueta (2-30 caracteres)..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                    className={
+                      tagInput.trim().length > 0 && 
+                      (tagInput.trim().length < 2 || tagInput.trim().length > 30)
+                        ? 'border-red-500' 
+                        : ''
                     }
-                  }}
-                />
+                  />
+                  {tagInput.trim().length > 0 && (
+                    <p className="text-xs mt-1">
+                      {tagInput.trim().length < 2 && (
+                        <span className="text-red-500">Mínimo 2 caracteres</span>
+                      )}
+                      {tagInput.trim().length > 30 && (
+                        <span className="text-red-500">Máximo 30 caracteres</span>
+                      )}
+                      {tagInput.trim().length >= 2 && tagInput.trim().length <= 30 && (
+                        <span className="text-green-500">✓ Longitud válida</span>
+                      )}
+                    </p>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleAddTag}
-                  disabled={!tagInput.trim()}
+                  disabled={!tagInput.trim() || tagInput.trim().length < 2 || tagInput.trim().length > 30}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
