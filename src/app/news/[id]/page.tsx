@@ -9,11 +9,10 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNewsDetail } from '@/hooks/useNews';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { News } from '@/types';
-import { 
+import {
   ArrowLeft,
   Calendar,
   Clock,
@@ -21,7 +20,6 @@ import {
   Share2,
   Bookmark,
   ThumbsUp,
-  MessageCircle,
   Newspaper,
   TrendingUp,
   Facebook,
@@ -29,17 +27,51 @@ import {
   Linkedin,
   Link as LinkIcon,
   Tag,
-  Trophy,  // AGREGADO
-  Gift,    // AGREGADO
-  Zap      // AGREGADO
+  Trophy,
+  Gift,
+  Zap,
+  Megaphone,
 } from 'lucide-react';
+import { AdSlot } from '@/components/ads/AdSlot'; // <- agregado
 
 // Icons para categorías
 const categoryIcons: Record<string, any> = {
-  general: Newspaper,
+  general: Megaphone,
   tournament: Trophy,
   promotion: Gift,
   update: Zap,
+};
+
+// Configuración de categorías
+const categoryConfig = {
+  general: {
+    label: 'General',
+    icon: Megaphone,
+    color: 'from-blue-500 to-blue-600',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/20',
+  },
+  tournament: {
+    label: 'Torneo',
+    icon: Trophy,
+    color: 'from-purple-500 to-purple-600',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/20',
+  },
+  promotion: {
+    label: 'Promoción',
+    icon: Gift,
+    color: 'from-green-500 to-green-600',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/20',
+  },
+  update: {
+    label: 'Actualización',
+    icon: Zap,
+    color: 'from-yellow-500 to-yellow-600',
+    bgColor: 'bg-yellow-500/10',
+    borderColor: 'border-yellow-500/20',
+  },
 };
 
 // Reading progress bar component
@@ -49,7 +81,8 @@ function ReadingProgress() {
   useEffect(() => {
     const updateProgress = () => {
       const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       const progressPercent = (scrollTop / docHeight) * 100;
       setProgress(progressPercent);
     };
@@ -75,14 +108,14 @@ function NewsDetailPage() {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  
+
   const { data, isLoading, error } = useNewsDetail(id);
   const news: News | undefined = data?.news;
 
   const handleShare = (platform: string) => {
     const url = window.location.href;
     const title = news?.title || '';
-    
+
     const shareUrls: Record<string, string> = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       twitter: `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
@@ -95,7 +128,7 @@ function NewsDetailPage() {
     } else if (shareUrls[platform]) {
       window.open(shareUrls[platform], '_blank', 'width=600,height=400');
     }
-    
+
     setShowShareMenu(false);
   };
 
@@ -130,15 +163,18 @@ function NewsDetailPage() {
     );
   }
 
-  const CategoryIcon = categoryIcons[news.category] || Newspaper;
+  const config =
+    categoryConfig[news.category as keyof typeof categoryConfig] ||
+    categoryConfig.general;
+  const CategoryIcon = config.icon;
 
   return (
     <>
       <ReadingProgress />
-      
+
       <article className="min-h-screen pb-20">
         {/* Hero Section */}
-        <div className="relative h-[70vh] min-h-[500px] overflow-hidden">
+        <div className="relative h-[60vh] min-h-[400px] overflow-hidden">
           {news.imageUrl ? (
             <>
               <Image
@@ -153,7 +189,7 @@ function NewsDetailPage() {
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-poker-green/20 to-poker-purple/20" />
           )}
-          
+
           {/* Back Button */}
           <div className="absolute top-24 left-4 z-20">
             <Button
@@ -179,9 +215,11 @@ function NewsDetailPage() {
               >
                 {/* Category & Badges */}
                 <div className="flex flex-wrap gap-2 mb-6">
-                  <Badge className="glass border-white/20 backdrop-blur-sm">
+                  <Badge
+                    className={`${config.bgColor} ${config.borderColor} border backdrop-blur-sm`}
+                  >
                     <CategoryIcon className="h-3 w-3 mr-1" />
-                    {getCategoryLabel(news.category)}
+                    {config.label}
                   </Badge>
                   {news.featured && (
                     <Badge className="bg-poker-gold text-black">
@@ -203,23 +241,8 @@ function NewsDetailPage() {
                   </p>
                 )}
 
-                {/* Meta Info */}
-                <div className="flex flex-wrap items-center gap-6 text-gray-300">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={news.author?.profile?.avatar} />
-                      <AvatarFallback>
-                        {news.author?.username?.charAt(0).toUpperCase() || 'A'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{news.author?.username || 'Admin'}</p>
-                      <p className="text-sm text-gray-400">
-                        {formatRelativeTime(news.publishedAt || news.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <Separator orientation="vertical" className="h-8" />
+                {/* Meta Info Simplificada */}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {formatDate(news.publishedAt || news.createdAt)}
@@ -258,7 +281,9 @@ function NewsDetailPage() {
                 className="rounded-full glass border-white/20"
                 onClick={() => setLiked(!liked)}
               >
-                <ThumbsUp className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
+                <ThumbsUp
+                  className={`h-5 w-5 ${liked ? 'fill-current' : ''}`}
+                />
               </Button>
               <Button
                 variant={bookmarked ? 'default' : 'outline'}
@@ -266,7 +291,9 @@ function NewsDetailPage() {
                 className="rounded-full glass border-white/20"
                 onClick={() => setBookmarked(!bookmarked)}
               >
-                <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-current' : ''}`} />
+                <Bookmark
+                  className={`h-5 w-5 ${bookmarked ? 'fill-current' : ''}`}
+                />
               </Button>
               <div className="relative">
                 <Button
@@ -334,8 +361,23 @@ function NewsDetailPage() {
               transition={{ duration: 0.6 }}
               className="prose prose-lg dark:prose-invert max-w-none"
             >
-              <div dangerouslySetInnerHTML={{ __html: news.content }} />
+              <div
+                dangerouslySetInnerHTML={{ __html: news.content }}
+              />
             </motion.div>
+
+            {/* Anuncios: Sidebar y móvil (antes de tags) */}
+            {/* Sidebar Ad para desktop */}
+            <div className="hidden lg:block">
+              <div className="fixed right-8 top-24 w-[300px]">
+                <AdSlot type="sidebar" />
+              </div>
+            </div>
+
+            {/* Mobile Ad */}
+            <div className="lg:hidden mt-8">
+              <AdSlot type="banner" />
+            </div>
 
             {/* Tags */}
             {news.tags && news.tags.length > 0 && (
@@ -350,7 +392,7 @@ function NewsDetailPage() {
                   <h3 className="text-lg font-semibold">Etiquetas</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {news.tags.map((tag: string, index: number) => (  // TIPOS AGREGADOS
+                  {news.tags.map((tag: string, index: number) => (
                     <Badge
                       key={index}
                       variant="outline"
@@ -370,7 +412,9 @@ function NewsDetailPage() {
                 size="sm"
                 onClick={() => setLiked(!liked)}
               >
-                <ThumbsUp className={`h-4 w-4 mr-2 ${liked ? 'fill-current' : ''}`} />
+                <ThumbsUp
+                  className={`h-4 w-4 mr-2 ${liked ? 'fill-current' : ''}`}
+                />
                 Me gusta
               </Button>
               <Button
@@ -378,7 +422,11 @@ function NewsDetailPage() {
                 size="sm"
                 onClick={() => setBookmarked(!bookmarked)}
               >
-                <Bookmark className={`h-4 w-4 mr-2 ${bookmarked ? 'fill-current' : ''}`} />
+                <Bookmark
+                  className={`h-4 w-4 mr-2 ${
+                    bookmarked ? 'fill-current' : ''
+                  }`}
+                />
                 Guardar
               </Button>
               <Button
@@ -393,28 +441,24 @@ function NewsDetailPage() {
 
             <Separator className="my-12" />
 
-            {/* Author Card */}
-            <Card className="glass border-white/10 p-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={news.author?.profile?.avatar} />
-                  <AvatarFallback className="text-xl">
-                    {news.author?.username?.charAt(0).toUpperCase() || 'A'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">
-                    {news.author?.username || 'Admin'}
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-3">
-                    {news.author?.role === 'editor' ? 'Editor' : 'Administrador'}
-                  </p>
-                  <p className="text-gray-300">
-                    Miembro del equipo editorial de Supernova. Apasionado por el poker y 
-                    las últimas novedades del mundo del gaming.
-                  </p>
-                </div>
-              </div>
+            {/* Related News CTA */}
+            <Card className="glass border-white/10 p-6 text-center">
+              <Newspaper className="h-12 w-12 text-poker-green mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                ¿Te gustó esta noticia?
+              </h3>
+              <p className="text-gray-400 mb-4">
+                Descubre más contenido interesante en nuestro centro de noticias
+              </p>
+              <Button
+                asChild
+                className="bg-poker-green hover:bg-poker-darkGreen text-black"
+              >
+                <Link href="/news">
+                  Ver más noticias
+                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                </Link>
+              </Button>
             </Card>
           </div>
         </div>
@@ -433,5 +477,4 @@ function getCategoryLabel(category: string): string {
   return categories[category] || category;
 }
 
-// EXPORT DEFAULT AGREGADO
 export default NewsDetailPage;
