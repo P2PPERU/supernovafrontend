@@ -55,6 +55,25 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     
     console.log('❌ Response error:', error.config?.url, error.response?.status);
+    
+    // AGREGADO: Ver detalles del error 400
+    if (error.response?.status === 400) {
+      console.error('❌ Error 400 - Bad Request Details:');
+      console.error('URL:', error.config?.url);
+      console.error('Method:', error.config?.method);
+      console.error('Response Data:', error.response.data);
+
+      // AGREGAR ESTO para ver el contenido del array de errores
+      if (error.response.data?.errors && Array.isArray(error.response.data.errors)) {
+      console.error('ERRORS ARRAY:', error.response.data.errors);
+      error.response.data.errors.forEach((err: any, index: number) => {
+        console.error(`Error ${index + 1}:`, err);
+      });
+      }
+
+      console.error('Response Message:', error.response.data?.message || 'No message');
+      console.error('Response Error:', error.response.data?.error || 'No error details');
+    }
 
     // Si es 401 y no es una petición de refresh
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {

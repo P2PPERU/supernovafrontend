@@ -87,7 +87,7 @@ const generateMockUpdate = (): LiveUpdate => {
   const randomDescription = randomType.descriptions[Math.floor(Math.random() * randomType.descriptions.length)];
 
   return {
-    id: Date.now().toString(),
+    id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
     type: randomType.type,
     title: randomTitle,
     description: randomDescription,

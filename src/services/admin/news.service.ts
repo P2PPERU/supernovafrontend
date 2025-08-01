@@ -60,9 +60,15 @@ interface NewsStats {
 
 // Transformador para normalizar las respuestas del backend
 const transformNewsResponse = (news: any): News => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
+  
   return {
     ...news,
-    imageUrl: news.imageUrl || news.image_url,
+    imageUrl: news.image_url 
+      ? `${baseUrl}${news.image_url}` 
+      : news.imageUrl 
+        ? `${baseUrl}${news.imageUrl}`
+        : null,
     publishedAt: news.publishedAt || news.published_at,
     authorId: news.authorId || news.author_id,
     createdAt: news.createdAt || news.created_at,
@@ -76,7 +82,8 @@ export const adminNewsService = {
     const response = await api.get('/news', { params: filters });
     return {
       ...response.data,
-      data: response.data.data.map(transformNewsResponse),
+      data: response.data.news?.map(transformNewsResponse) || [], // CAMBIO: .data → .news
+      totalItems: response.data.totalNews, // AGREGADO
     };
   },
 
@@ -106,7 +113,7 @@ export const adminNewsService = {
     console.log('📋 Status being sent:', data.status || 'draft');
     
     if (data.tags && data.tags.length > 0) {
-      formData.append('tags', JSON.stringify(data.tags));
+      data.tags.forEach(tag => formData.append('tags[]', tag));
     }
     formData.append('featured', String(data.featured || false));
     
@@ -140,7 +147,13 @@ export const adminNewsService = {
       formData.append('status', data.status);
       console.log('📋 Status being updated to:', data.status);
     }
-    if (data.tags !== undefined) formData.append('tags', JSON.stringify(data.tags));
+    if (data.tags !== undefined) {
+      if (Array.isArray(data.tags) && data.tags.length > 0) {
+      data.tags.forEach(tag => formData.append('tags[]', tag));
+      } else {
+      formData.append('tags[]', '');
+      }
+    }
     if (data.featured !== undefined) formData.append('featured', String(data.featured));
     if (data.image) formData.append('image', data.image);
 
