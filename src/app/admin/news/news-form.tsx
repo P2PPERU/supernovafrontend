@@ -34,7 +34,7 @@ import {
   Settings
 } from 'lucide-react';
 
-// Schema de validación - CORREGIDO
+// Schema de validación
 const newsFormSchema = z.object({
   title: z
     .string()
@@ -108,25 +108,28 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
   }, [news, reset]);
 
   const handleFormSubmit = (data: NewsFormData) => {
-    // Solo incluir la imagen si hay una nueva
     const submitData: any = {
       ...data,
+      status: data.status || 'draft', // Asegurar que siempre haya un estado
     };
     
     if (image) {
       submitData.image = image;
     }
     
+    console.log('📤 Submitting news with status:', submitData.status);
     onSubmit(submitData);
   };
 
   const handleSaveAsDraft = () => {
     setValue('status', 'draft');
+    console.log('⚠️ Guardando como BORRADOR - No será visible en la página pública');
     handleSubmit(handleFormSubmit)();
   };
 
   const handlePublish = () => {
     setValue('status', 'published');
+    console.log('✅ Publicando noticia - Será visible en la página pública');
     handleSubmit(handleFormSubmit)();
   };
 
@@ -398,11 +401,24 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
       {/* Actions */}
       <Card>
         <CardContent className="flex items-center justify-between pt-6">
-          <div className="text-sm text-muted-foreground">
-            {mode === 'edit' 
-              ? `Editando: ${news?.title}` 
-              : 'Los campos marcados con * son obligatorios'
-            }
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">
+              {mode === 'edit' 
+                ? `Editando: ${news?.title}` 
+                : 'Los campos marcados con * son obligatorios'
+              }
+            </p>
+            {/* Indicador del estado actual */}
+            <div className="flex items-center gap-2 text-xs">
+              <span>Estado actual:</span>
+              <Badge variant={watchedValues.status === 'published' ? 'default' : 'outline'}>
+                {watchedValues.status === 'published' ? 'Publicado' : 
+                 watchedValues.status === 'draft' ? 'Borrador' : 'Archivado'}
+              </Badge>
+              {watchedValues.status === 'draft' && (
+                <span className="text-yellow-600">⚠️ No visible en la página pública</span>
+              )}
+            </div>
           </div>
           <div className="flex gap-3">
             <Button
@@ -418,6 +434,7 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
               type="button"
               disabled={isLoading}
               onClick={handlePublish}
+              className={watchedValues.status === 'published' ? '' : 'bg-poker-green hover:bg-poker-darkGreen'}
             >
               <Send className="mr-2 h-4 w-4" />
               {watchedValues.status === 'published' ? 'Actualizar' : 'Publicar'}

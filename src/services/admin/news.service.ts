@@ -58,35 +58,58 @@ interface NewsStats {
   }>;
 }
 
+// Transformador para normalizar las respuestas del backend
+const transformNewsResponse = (news: any): News => {
+  return {
+    ...news,
+    imageUrl: news.imageUrl || news.image_url,
+    publishedAt: news.publishedAt || news.published_at,
+    authorId: news.authorId || news.author_id,
+    createdAt: news.createdAt || news.created_at,
+    updatedAt: news.updatedAt || news.updated_at,
+  };
+};
+
 export const adminNewsService = {
   // Obtener lista de noticias con filtros
   getNews: async (filters: NewsFilters = {}): Promise<PaginatedResponse<News>> => {
     const response = await api.get('/news', { params: filters });
-    return response.data;
+    return {
+      ...response.data,
+      data: response.data.data.map(transformNewsResponse),
+    };
   },
 
   // Obtener noticia por ID
   getNewsById: async (id: string): Promise<{ success: boolean; news: News }> => {
     const response = await api.get(`/news/${id}`);
-    return response.data;
+    return {
+      ...response.data,
+      news: transformNewsResponse(response.data.news),
+    };
   },
 
   // Crear noticia
   createNews: async (data: CreateNewsData): Promise<{ success: boolean; news: News }> => {
     const formData = new FormData();
     
-    // Agregar campos al FormData
+    // Log para debug
+    console.log('🚀 Creating news with data:', data);
+    
     formData.append('title', data.title);
     formData.append('content', data.content);
     if (data.summary) formData.append('summary', data.summary);
     formData.append('category', data.category);
     formData.append('status', data.status || 'draft');
+    
+    // Log del estado
+    console.log('📋 Status being sent:', data.status || 'draft');
+    
     if (data.tags && data.tags.length > 0) {
       formData.append('tags', JSON.stringify(data.tags));
     }
     formData.append('featured', String(data.featured || false));
     
-    // Solo agregar imagen si existe
     if (data.image) {
       formData.append('image', data.image);
     }
@@ -96,19 +119,27 @@ export const adminNewsService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    
+    return {
+      ...response.data,
+      news: transformNewsResponse(response.data.news),
+    };
   },
 
   // Actualizar noticia
   updateNews: async (id: string, data: UpdateNewsData): Promise<{ success: boolean; news: News }> => {
     const formData = new FormData();
     
-    // Solo agregar campos que estén presentes
+    console.log('🔄 Updating news with data:', data);
+    
     if (data.title !== undefined) formData.append('title', data.title);
     if (data.content !== undefined) formData.append('content', data.content);
     if (data.summary !== undefined) formData.append('summary', data.summary);
     if (data.category !== undefined) formData.append('category', data.category);
-    if (data.status !== undefined) formData.append('status', data.status);
+    if (data.status !== undefined) {
+      formData.append('status', data.status);
+      console.log('📋 Status being updated to:', data.status);
+    }
     if (data.tags !== undefined) formData.append('tags', JSON.stringify(data.tags));
     if (data.featured !== undefined) formData.append('featured', String(data.featured));
     if (data.image) formData.append('image', data.image);
@@ -118,7 +149,11 @@ export const adminNewsService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    
+    return {
+      ...response.data,
+      news: transformNewsResponse(response.data.news),
+    };
   },
 
   // Eliminar noticia
@@ -135,13 +170,41 @@ export const adminNewsService = {
 
   // Cambiar estado de una noticia (publicar, archivar, etc)
   updateNewsStatus: async (id: string, status: 'draft' | 'published' | 'archived'): Promise<{ success: boolean; news: News }> => {
-    const response = await api.put(`/news/${id}`, { status });
-    return response.data;
+    // Usar FormData para mantener consistencia
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    console.log('📋 Updating status to:', status);
+    
+    const response = await api.put(`/news/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return {
+      ...response.data,
+      news: transformNewsResponse(response.data.news),
+    };
   },
 
   // Toggle featured
   toggleFeatured: async (id: string, featured: boolean): Promise<{ success: boolean; news: News }> => {
-    const response = await api.put(`/news/${id}`, { featured });
-    return response.data;
+    // Usar FormData para mantener consistencia
+    const formData = new FormData();
+    formData.append('featured', String(featured));
+    
+    console.log('⭐ Toggling featured to:', featured);
+    
+    const response = await api.put(`/news/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return {
+      ...response.data,
+      news: transformNewsResponse(response.data.news),
+    };
   },
 };

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,21 +44,67 @@ import { NewsSkeletonGrid } from '@/components/news/news-skeleton';
 import { QuickReadModal } from '@/components/news/quick-read-modal';
 
 export default function NewsPage() {
+  const searchParams = useSearchParams();
+  const debugMode = searchParams.get('debug');
+  
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [page, setPage] = useState(1);
   const [quickReadNews, setQuickReadNews] = useState<News | null>(null);
   const [layout, setLayout] = useState<'magazine' | 'blog' | 'masonry'>('magazine');
 
-  const { data, isLoading } = useNews({
+  // Modificar filtros según el modo debug
+  let statusFilter: string | undefined = 'published';
+  if (debugMode === 'no-status') {
+    statusFilter = undefined;
+  } else if (debugMode === 'all-status') {
+    statusFilter = undefined;
+  } else if (debugMode === 'draft') {
+    statusFilter = 'draft';
+  } else if (debugMode === 'show-all') {
+    statusFilter = undefined; // Sin filtro de estado
+  }
+
+  // Debug: Ver qué filtros se están enviando
+  const filters = {
     page,
     limit: 12,
     category: category === 'all' ? undefined : category,
     search: search || undefined,
-    status: 'published',
-  });
+    status: statusFilter,
+  };
+  
+  console.log('🔍 Filtros enviados al backend:', filters);
+  console.log('🔍 Debug mode:', debugMode);
+  
+  const { data, isLoading } = useNews(filters);
 
   const { data: featuredData } = useFeaturedNews(6);
+
+  // Debug logs para verificar los datos
+  useEffect(() => {
+    if (data) {
+      console.log('📊 News data received:', {
+        total: data.totalItems,
+        items: data.data.length,
+        firstItem: data.data[0],
+        allItems: data.data,
+        rawData: data,
+      });
+      
+      // Verificar si hay noticias sin imageUrl
+      const newsWithoutImages = data.data.filter(item => !item.imageUrl);
+      if (newsWithoutImages.length > 0) {
+        console.log('⚠️ Noticias sin imagen:', newsWithoutImages);
+      }
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (featuredData) {
+      console.log('⭐ Featured news data:', featuredData);
+    }
+  }, [featuredData]);
 
   const news = data?.data || [];
   const totalPages = data?.totalPages || 1;
@@ -144,10 +191,23 @@ export default function NewsPage() {
               onCategoryChange={setCategory}
               showCounts
             />
+            
+            {/* Toggle para mostrar todas las noticias */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 text-center">
+                <Button
+                  variant={statusFilter ? 'outline' : 'default'}
+                  size="sm"
+                  onClick={() => window.location.href = statusFilter ? '/news?debug=show-all' : '/news'}
+                  className="glass"
+                >
+                  {statusFilter ? '🔒 Solo publicadas' : '🔓 Mostrando todas'}
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-20">
         {isLoading ? (
@@ -158,9 +218,71 @@ export default function NewsPage() {
             <p className="text-xl text-gray-400">
               No se encontraron noticias con los filtros seleccionados.
             </p>
+            {/* Debug info cuando no hay noticias */}
+            <div className="mt-6 p-4 bg-gray-800/50 rounded-lg text-left max-w-md mx-auto">
+              <p className="text-sm font-mono text-gray-500 mb-2">🔍 Debug Info:</p>
+              <div className="text-xs font-mono space-y-1 text-gray-600">
+                <p>• Categoría: {category}</p>
+                <p>• Estado: {statusFilter || 'sin filtro'}</p>
+                <p>• Búsqueda: {search || 'ninguna'}</p>
+                <p>• Página: {page}</p>
+                <p>• Total items: {data?.totalItems || 0}</p>
+                <p>• Debug mode: {debugMode || 'normal'}</p>
+              </div>
+              <p className="text-xs text-yellow-600 mt-3">
+                💡 Tip: Asegúrate de publicar las noticias (no solo guardarlas como borrador)
+              </p>
+              
+              {/* Botones de prueba */}
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-gray-400">Prueba estos filtros:</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log('🧪 Probando sin filtro de estado');
+                      window.location.href = '/news?debug=no-status';
+                    }}
+                    className="text-xs"
+                  >
+                    Sin filtro estado
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log('🧪 Probando con todos los estados');
+                      window.location.href = '/news?debug=all-status';
+                    }}
+                    className="text-xs"
+                  >
+                    Todos los estados
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log('🧪 Mostrando TODAS las noticias sin filtros');
+                      window.location.href = '/news?debug=show-all';
+                    }}
+                    className="text-xs bg-green-900/50"
+                  >
+                    🔓 Ver TODAS (sin filtros)
+                  </Button>
+                </div>
+              </div>
+            </div>
           </Card>
         ) : (
           <>
+            {/* Debug info cuando hay noticias */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-4 p-2 bg-gray-800/30 rounded text-xs font-mono text-gray-500">
+                📰 Mostrando {news.length} de {data?.totalItems} noticias | Estado: {statusFilter || 'sin filtro'} | Debug: {debugMode || 'off'}
+              </div>
+            )}
+
             {/* Featured News Hero */}
             {mainNews && (
               <div className="mb-12">
@@ -228,7 +350,11 @@ export default function NewsPage() {
                 <SidebarSection delay={0.5}>
                   <TagsCloud 
                     tags={popularTags}
-                    onTagClick={(tag) => console.log('Tag clicked:', tag)}
+                    onTagClick={(tag) => {
+                      console.log('Tag clicked:', tag);
+                      // Aquí podrías filtrar por tag
+                      setSearch(tag);
+                    }}
                   />
                 </SidebarSection>
 
