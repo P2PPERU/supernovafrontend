@@ -1,12 +1,21 @@
 // src/services/ads.service.ts
 import { Ad } from '@/types/ads.types';
 
-// Mock data para desarrollo - en producción vendría del backend
-const mockAds: Ad[] = [
+// Extender el tipo Ad para incluir datos de placeholder
+export interface AdWithPlaceholder extends Ad {
+  placeholderData?: {
+    text: string;
+    bgColor: string;
+    textColor: string;
+  };
+}
+
+// Mock data con placeholders locales
+const mockAds: AdWithPlaceholder[] = [
   {
     id: '1',
     title: 'PokerStars - Bono de Bienvenida',
-    imageUrl: 'https://placehold.co/728x90/1a1a1a/22c55e?text=PokerStars+Bono+200%25',
+    imageUrl: '', // Vacío para usar placeholder
     linkUrl: 'https://pokerstars.com',
     type: 'banner',
     position: 'top',
@@ -14,11 +23,16 @@ const mockAds: Ad[] = [
     isActive: true,
     priority: 1,
     createdAt: new Date().toISOString(),
+    placeholderData: {
+      text: 'PokerStars Bono 200%',
+      bgColor: '#1a1a1a',
+      textColor: '#22c55e',
+    }
   },
   {
     id: '2',
     title: 'GGPoker - Torneo Millonario',
-    imageUrl: 'https://placehold.co/728x90/1a1a1a/f59e0b?text=GGPoker+%241M+GTD',
+    imageUrl: '',
     linkUrl: 'https://ggpoker.com',
     type: 'banner',
     position: 'top',
@@ -26,46 +40,64 @@ const mockAds: Ad[] = [
     isActive: true,
     priority: 2,
     createdAt: new Date().toISOString(),
+    placeholderData: {
+      text: 'GGPoker $1M GTD',
+      bgColor: '#1a1a1a',
+      textColor: '#f59e0b',
+    }
   },
   {
     id: '3',
     title: '888poker - Spins Gratis',
-    imageUrl: 'https://placehold.co/300x250/1a1a1a/8b5cf6?text=888poker+Spins',
+    imageUrl: '',
     linkUrl: 'https://888poker.com',
     type: 'sidebar',
     size: { width: 300, height: 250 },
     isActive: true,
     priority: 1,
     createdAt: new Date().toISOString(),
+    placeholderData: {
+      text: '888poker Spins',
+      bgColor: '#1a1a1a',
+      textColor: '#8b5cf6',
+    }
   },
   {
     id: '4',
     title: 'PartyPoker - Rakeback 40%',
-    imageUrl: 'https://placehold.co/300x600/1a1a1a/ef4444?text=PartyPoker+Rakeback',
+    imageUrl: '',
     linkUrl: 'https://partypoker.com',
     type: 'sidebar',
     size: { width: 300, height: 600 },
     isActive: true,
     priority: 2,
     createdAt: new Date().toISOString(),
+    placeholderData: {
+      text: 'PartyPoker Rakeback',
+      bgColor: '#1a1a1a',
+      textColor: '#ef4444',
+    }
   },
   {
     id: '5',
     title: 'Academia de Poker Pro',
-    imageUrl: 'https://placehold.co/320x100/1a1a1a/3b82f6?text=Academia+Poker',
+    imageUrl: '',
     linkUrl: 'https://academiapokerpro.com',
     type: 'native',
     size: { width: 320, height: 100 },
     isActive: true,
     priority: 1,
     createdAt: new Date().toISOString(),
+    placeholderData: {
+      text: 'Academia Poker',
+      bgColor: '#1a1a1a',
+      textColor: '#3b82f6',
+    }
   },
 ];
 
 export const adsService = {
-  // Obtener anuncios por tipo
-  getAdsByType: async (type: 'banner' | 'sidebar' | 'native'): Promise<Ad[]> => {
-    // Simular delay de API
+  getAdsByType: async (type: 'banner' | 'sidebar' | 'native'): Promise<AdWithPlaceholder[]> => {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     return mockAds
@@ -73,21 +105,16 @@ export const adsService = {
       .sort((a, b) => a.priority - b.priority);
   },
 
-  // Obtener un anuncio específico
-  getAdById: async (id: string): Promise<Ad | null> => {
+  getAdById: async (id: string): Promise<AdWithPlaceholder | null> => {
     const ad = mockAds.find(a => a.id === id);
     return ad || null;
   },
 
-  // Registrar impresión (para futuras métricas)
   recordImpression: async (adId: string): Promise<void> => {
-    // En producción, esto haría una llamada al backend
     console.log('Ad impression recorded:', adId);
   },
 
-  // Registrar click
   recordClick: async (adId: string): Promise<void> => {
-    // En producción, esto haría una llamada al backend
     console.log('Ad click recorded:', adId);
   },
 };

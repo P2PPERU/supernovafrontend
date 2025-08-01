@@ -14,7 +14,7 @@ import {
   Sparkles
 } from 'lucide-react';
 
-// NUEVOS IMPORTS
+// IMPORTS ACTUALIZADOS
 import { NewsLayoutModern } from '@/components/news/news-layout-modern';
 import { NewsTicker } from '@/components/news/news-ticker';
 import { CategoriesNav } from '@/components/news/categories-nav';
@@ -37,13 +37,23 @@ export default function NewsPage() {
   
   const { data, isLoading } = useNews(filters);
   const { data: featuredData } = useFeaturedNews(10);
+  const { data: trendingData } = useNews({ 
+    ...filters, 
+    limit: 5, 
+    sortBy: 'views' 
+  });
 
   const news = data?.data || [];
   const totalPages = data?.totalPages || 1;
   const tickerNews = featuredData?.news?.slice(0, 10) || [];
+  const trendingNews = trendingData?.data || [];
   
   const mainFeaturedNews = news.find(item => item.featured) || news[0];
   const otherNews = news.filter(item => item.id !== mainFeaturedNews?.id);
+
+  const handleLoadMore = () => {
+    setPage(page + 1);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background">
@@ -142,60 +152,14 @@ export default function NewsPage() {
             )}
           </Card>
         ) : (
-          <>
-            <NewsLayoutModern 
-              news={otherNews} 
-              featuredNews={mainFeaturedNews}
-            />
-
-            {/* Paginación */}
-            {totalPages > 1 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex justify-center items-center gap-2 mt-12"
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                  className="glass border-white/20"
-                >
-                  Anterior
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                        className={page === pageNum ? 'bg-poker-green text-black' : 'hover:bg-white/10'}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                  {totalPages > 5 && (
-                    <span className="px-2 text-gray-500">...</span>
-                  )}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                  className="glass border-white/20"
-                >
-                  Siguiente
-                </Button>
-              </motion.div>
-            )}
-          </>
+          <NewsLayoutModern 
+            news={otherNews} 
+            featuredNews={mainFeaturedNews}
+            trendingNews={trendingNews}
+            onLoadMore={handleLoadMore}
+            hasMore={page < totalPages}
+            isLoading={isLoading}
+          />
         )}
       </section>
     </div>

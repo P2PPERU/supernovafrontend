@@ -11,7 +11,7 @@ export interface Ad {
     height: number;
   };
   isActive: boolean;
-  priority: number; // Para ordenar qué anuncios mostrar primero
+  priority: number;
   impressions?: number;
   clicks?: number;
   createdAt: string;
@@ -23,5 +23,14 @@ export interface AdSlotProps {
   position?: string;
   className?: string;
   maxAds?: number;
-  rotationInterval?: number; // en segundos
+  rotationInterval?: number;
+}
+
+// Extensión para ads con placeholder
+export interface AdWithPlaceholder extends Ad {
+  placeholderData?: {
+    text: string;
+    bgColor: string;
+    textColor: string;
+  };
 }

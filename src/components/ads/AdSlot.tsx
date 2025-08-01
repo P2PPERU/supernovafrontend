@@ -1,10 +1,10 @@
-// src/components/ads/AdSlot.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Ad, AdSlotProps } from '@/types/ads.types';
-import { adsService } from '@/services/ads.service';
+import { adsService, AdWithPlaceholder } from '@/services/ads.service';
+import { AdPlaceholder } from './AdPlaceholder';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { X, ExternalLink } from 'lucide-react';
@@ -14,9 +14,9 @@ export function AdSlot({
   position,
   className,
   maxAds = 3,
-  rotationInterval = 30, // 30 segundos por defecto
+  rotationInterval = 30,
 }: AdSlotProps) {
-  const [ads, setAds] = useState<Ad[]>([]);
+  const [ads, setAds] = useState<AdWithPlaceholder[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
@@ -47,7 +47,7 @@ export function AdSlot({
     }
   };
 
-  const handleAdClick = async (ad: Ad) => {
+  const handleAdClick = async (ad: AdWithPlaceholder) => {
     await adsService.recordClick(ad.id);
     window.open(ad.linkUrl, '_blank', 'noopener,noreferrer');
   };
@@ -62,7 +62,6 @@ export function AdSlot({
 
   const currentAd = ads[currentAdIndex];
 
-  // Renderizar según el tipo
   switch (type) {
     case 'banner':
       return <BannerAd ad={currentAd} onClose={handleClose} onClick={handleAdClick} className={className} />;
@@ -82,9 +81,9 @@ function BannerAd({
   onClick,
   className,
 }: {
-  ad: Ad;
+  ad: AdWithPlaceholder;
   onClose: () => void;
-  onClick: (ad: Ad) => void;
+  onClick: (ad: AdWithPlaceholder) => void;
   className?: string;
 }) {
   useEffect(() => {
@@ -102,31 +101,40 @@ function BannerAd({
       )}
     >
       <div className="relative group cursor-pointer" onClick={() => onClick(ad)}>
-        {/* Imagen del anuncio */}
         <div className="relative h-20 md:h-24 lg:h-[90px] w-full">
-          <Image
-            src={ad.imageUrl}
-            alt={ad.title}
-            fill
-            className="object-contain"
-            priority
-          />
+          {ad.placeholderData ? (
+            <AdPlaceholder
+              width={ad.size?.width || 728}
+              height={ad.size?.height || 90}
+              text={ad.placeholderData.text}
+              bgColor={ad.placeholderData.bgColor}
+              textColor={ad.placeholderData.textColor}
+            />
+          ) : ad.imageUrl ? (
+            <Image
+              src={ad.imageUrl}
+              alt={ad.title}
+              fill
+              className="object-contain"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-poker-green/20 to-poker-purple/20 flex items-center justify-center">
+              <span className="text-white font-bold">{ad.title}</span>
+            </div>
+          )}
           
-          {/* Overlay con indicador de anuncio */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/20" />
           
-          {/* Badge de anuncio */}
           <div className="absolute top-2 left-2 px-2 py-1 bg-black/50 backdrop-blur-sm rounded text-xs text-gray-400">
             Publicidad
           </div>
           
-          {/* Icono de link externo */}
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <ExternalLink className="h-4 w-4 text-white" />
           </div>
         </div>
 
-        {/* Botón de cerrar */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -148,9 +156,9 @@ function SidebarAd({
   onClick,
   className,
 }: {
-  ads: Ad[];
+  ads: AdWithPlaceholder[];
   currentIndex: number;
-  onClick: (ad: Ad) => void;
+  onClick: (ad: AdWithPlaceholder) => void;
   className?: string;
 }) {
   const currentAd = ads[currentIndex];
@@ -171,27 +179,37 @@ function SidebarAd({
           className="relative overflow-hidden rounded-xl bg-gray-900/30 backdrop-blur-sm border border-white/10 group cursor-pointer"
           onClick={() => onClick(currentAd)}
         >
-          {/* Determinar altura según el tamaño del anuncio */}
           <div className={cn(
             'relative w-full',
             currentAd.size?.height === 600 ? 'h-[600px]' : 'h-[250px]'
           )}>
-            <Image
-              src={currentAd.imageUrl}
-              alt={currentAd.title}
-              fill
-              className="object-cover"
-            />
+            {currentAd.placeholderData ? (
+              <AdPlaceholder
+                width={currentAd.size?.width || 300}
+                height={currentAd.size?.height || 250}
+                text={currentAd.placeholderData.text}
+                bgColor={currentAd.placeholderData.bgColor}
+                textColor={currentAd.placeholderData.textColor}
+              />
+            ) : currentAd.imageUrl ? (
+              <Image
+                src={currentAd.imageUrl}
+                alt={currentAd.title}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-poker-green/20 to-poker-purple/20 flex items-center justify-center p-4">
+                <span className="text-white font-bold text-center">{currentAd.title}</span>
+              </div>
+            )}
             
-            {/* Overlay gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
-            {/* Badge de publicidad */}
             <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs text-gray-300">
               Publicidad
             </div>
             
-            {/* Indicador de hover */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="px-4 py-2 bg-poker-green text-black rounded-lg font-medium flex items-center gap-2">
                 Ver más
@@ -202,7 +220,6 @@ function SidebarAd({
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicadores de rotación */}
       {ads.length > 1 && (
         <div className="flex justify-center gap-1">
           {ads.map((_, index) => (
@@ -222,14 +239,14 @@ function SidebarAd({
   );
 }
 
-// Componente para Native Ads (entre noticias)
+// Componente para Native Ads
 function NativeAd({
   ad,
   onClick,
   className,
 }: {
-  ad: Ad;
-  onClick: (ad: Ad) => void;
+  ad: AdWithPlaceholder;
+  onClick: (ad: AdWithPlaceholder) => void;
   className?: string;
 }) {
   useEffect(() => {
@@ -247,17 +264,29 @@ function NativeAd({
       onClick={() => onClick(ad)}
     >
       <div className="flex items-center gap-4">
-        {/* Imagen del anuncio */}
         <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-          <Image
-            src={ad.imageUrl}
-            alt={ad.title}
-            fill
-            className="object-cover"
-          />
+          {ad.placeholderData ? (
+            <AdPlaceholder
+              width={ad.size?.width || 320}
+              height={ad.size?.height || 100}
+              text={ad.placeholderData.text}
+              bgColor={ad.placeholderData.bgColor}
+              textColor={ad.placeholderData.textColor}
+            />
+          ) : ad.imageUrl ? (
+            <Image
+              src={ad.imageUrl}
+              alt={ad.title}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-poker-green/20 to-poker-purple/20 flex items-center justify-center">
+              <span className="text-white font-bold text-xs text-center">{ad.title}</span>
+            </div>
+          )}
         </div>
 
-        {/* Contenido */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
@@ -269,7 +298,6 @@ function NativeAd({
           </h3>
         </div>
 
-        {/* Indicador de hover */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <ExternalLink className="h-5 w-5 text-poker-green" />
         </div>
