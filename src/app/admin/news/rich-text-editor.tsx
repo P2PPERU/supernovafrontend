@@ -38,7 +38,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { uploadService } from '@/services/upload.service';
+// import { uploadService } from '@/services/upload.service'; // Comentado hasta que exista el endpoint
 
 interface RichTextEditorProps {
   value: string;
@@ -82,6 +82,7 @@ export function RichTextEditor({
   const [charCount, setCharCount] = useState(0);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Toolbar principal
   const mainToolbar: ToolbarButton[] = [
@@ -110,6 +111,14 @@ export function RichTextEditor({
     { icon: Redo, command: 'redo', tooltip: 'Rehacer' },
   ];
 
+  // Inicializar el contenido solo una vez
+  useEffect(() => {
+    if (editorRef.current && !isInitialized && value) {
+      editorRef.current.innerHTML = value;
+      setIsInitialized(true);
+    }
+  }, [value, isInitialized]);
+
   // Actualizar contadores
   useEffect(() => {
     const text = editorRef.current?.innerText || '';
@@ -131,6 +140,25 @@ export function RichTextEditor({
     if (document.queryCommandState('justifyRight')) formats.add('justifyRight');
     
     setActiveFormats(formats);
+  };
+
+  // Guardar y restaurar la posición del cursor
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      return sel.getRangeAt(0);
+    }
+    return null;
+  };
+
+  const restoreSelection = (range: Range | null) => {
+    if (range) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
   };
 
   // Ejecutar comando
@@ -172,9 +200,20 @@ export function RichTextEditor({
       return;
     }
 
+    // Guardar selección antes de ejecutar comando
+    const savedRange = saveSelection();
     document.execCommand(command, false, value);
+    
+    // Restaurar selección
+    restoreSelection(savedRange);
+    
     editorRef.current?.focus();
     updateActiveFormats();
+    
+    // Actualizar el valor inmediatamente
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
   };
 
   // Insertar tabla
@@ -198,6 +237,7 @@ export function RichTextEditor({
       </table>
     `;
     document.execCommand('insertHTML', false, table);
+    handleInput();
   };
 
   // Insertar enlace
@@ -212,6 +252,7 @@ export function RichTextEditor({
       setLinkUrl('');
       setLinkText('');
       editorRef.current?.focus();
+      handleInput();
     }
   };
 
@@ -229,6 +270,7 @@ export function RichTextEditor({
       setImageUrl('');
       setImageAlt('');
       editorRef.current?.focus();
+      handleInput();
     }
   };
 
@@ -257,13 +299,15 @@ export function RichTextEditor({
       setShowVideoDialog(false);
       setVideoUrl('');
       editorRef.current?.focus();
+      handleInput();
     }
   };
 
   // Manejar cambios en el editor
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const newContent = editorRef.current.innerHTML;
+      onChange(newContent);
       updateActiveFormats();
     }
   };
@@ -292,6 +336,7 @@ export function RichTextEditor({
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       document.execCommand('insertText', false, text);
+      handleInput();
     }
   };
 
@@ -318,11 +363,17 @@ export function RichTextEditor({
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 100);
 
-      if (onImageUpload) {
-        url = await onImageUpload(file);
-      } else {
-        url = await uploadService.uploadImage(file);
-      }
+      // Convertir la imagen a base64 para mostrarla temporalmente
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = (e) => {
+          resolve(e.target?.result as string);
+        };
+        reader.onerror = reject;
+      });
+      
+      reader.readAsDataURL(file);
+      url = await base64Promise;
 
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -336,10 +387,10 @@ export function RichTextEditor({
       document.execCommand('insertHTML', false, html);
       handleInput();
 
-      toast.success('Imagen subida exitosamente');
+      toast.success('Imagen agregada al contenido');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Error al subir la imagen');
+      console.error('Error processing image:', error);
+      toast.error('Error al procesar la imagen');
     } finally {
       setIsUploadingImage(false);
       setUploadProgress(0);
@@ -440,7 +491,7 @@ export function RichTextEditor({
             <div className="px-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Subiendo imagen...</span>
+                <span>Procesando imagen...</span>
                 <span className="ml-auto">{uploadProgress}%</span>
               </div>
               <Progress value={uploadProgress} className="h-2 mt-2" />
@@ -464,7 +515,6 @@ export function RichTextEditor({
               onKeyUp={updateActiveFormats}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              dangerouslySetInnerHTML={{ __html: value }}
               data-placeholder={placeholder}
             />
             {/* Mostrar placeholder cuando está vacío */}
@@ -548,12 +598,39 @@ export function RichTextEditor({
           <DialogHeader>
             <DialogTitle>Insertar imagen</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="upload" className="w-full">
+          <Tabs defaultValue="url" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">Subir archivo</TabsTrigger>
               <TabsTrigger value="url">URL</TabsTrigger>
+              <TabsTrigger value="upload">Vista previa local</TabsTrigger>
             </TabsList>
+            <TabsContent value="url" className="space-y-4">
+              <div>
+                <Label htmlFor="imageUrl">URL de la imagen</Label>
+                <Input
+                  id="imageUrl"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  type="url"
+                />
+              </div>
+              <div>
+                <Label htmlFor="imageAltUrl">Texto alternativo (alt)</Label>
+                <Input
+                  id="imageAltUrl"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                  placeholder="Descripción de la imagen"
+                />
+              </div>
+            </TabsContent>
             <TabsContent value="upload" className="space-y-4">
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Nota:</strong> Las imágenes seleccionadas aquí se mostrarán como vista previa. 
+                  Para subirlas permanentemente, usa la sección "Multimedia" del formulario.
+                </p>
+              </div>
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center">
                 <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-sm text-gray-600 mb-4">
@@ -580,27 +657,6 @@ export function RichTextEditor({
                 />
               </div>
             </TabsContent>
-            <TabsContent value="url" className="space-y-4">
-              <div>
-                <Label htmlFor="imageUrl">URL de la imagen</Label>
-                <Input
-                  id="imageUrl"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  type="url"
-                />
-              </div>
-              <div>
-                <Label htmlFor="imageAltUrl">Texto alternativo (alt)</Label>
-                <Input
-                  id="imageAltUrl"
-                  value={imageAlt}
-                  onChange={(e) => setImageAlt(e.target.value)}
-                  placeholder="Descripción de la imagen"
-                />
-              </div>
-            </TabsContent>
           </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImageDialog(false)}>
@@ -610,7 +666,7 @@ export function RichTextEditor({
               {isUploadingImage ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Subiendo...
+                  Procesando...
                 </>
               ) : (
                 'Insertar'

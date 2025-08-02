@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload, ImageFile } from './image-upload';
-import { RichTextEditor } from './rich-text-editor';
+import { ModernEditor } from './modern-editor';
 import { News } from '@/types';
 import { toast } from 'sonner';
 import { 
@@ -250,22 +250,11 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="content">Contenido *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPreviewMode(!previewMode)}
-                  >
-                    {previewMode ? 'Editar' : 'Vista previa'}
-                  </Button>
-                </div>
-                <RichTextEditor
+                <Label htmlFor="content">Contenido *</Label>
+                <ModernEditor
                   value={watchedValues.content}
                   onChange={(value) => setValue('content', value)}
                   placeholder="Escribe el contenido de la noticia..."
-                  preview={previewMode}
                   error={!!errors.content}
                 />
                 {errors.content && (
