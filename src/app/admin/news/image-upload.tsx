@@ -1,4 +1,3 @@
-// src/app/admin/news/image-upload.tsx
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge'; // <- agregado
+import { Badge } from '@/components/ui/badge';
 import {
   Upload,
   X,
@@ -23,7 +22,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface ImageFile {
+// Exportar la interfaz para usar en otros componentes
+export interface ImageFile {
   id: string;
   file?: File;
   url: string;
@@ -56,10 +56,13 @@ export function ImageUpload({
   allowMultiple = true,
 }: ImageUploadProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Asegurar que value siempre sea un array
+  const safeValue = Array.isArray(value) ? value : [];
 
   // Inicializar con imagen actual si existe
   useEffect(() => {
-    if (currentImageUrl && value.length === 0) {
+    if (currentImageUrl && safeValue.length === 0) {
       onChange([
         {
           id: 'current',
@@ -70,8 +73,7 @@ export function ImageUpload({
         },
       ]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentImageUrl]);
+  }, [currentImageUrl, safeValue.length, onChange]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -91,7 +93,7 @@ export function ImageUpload({
       }
 
       // Verificar límite de archivos
-      if (value.length + acceptedFiles.length > maxFiles) {
+      if (safeValue.length + acceptedFiles.length > maxFiles) {
         // Podrías mostrar un toast de que se excede el límite
         return;
       }
@@ -103,36 +105,40 @@ export function ImageUpload({
         url: URL.createObjectURL(file),
         name: file.name,
         size: file.size,
-        isMain: value.length === 0 && index === 0, // Primera imagen es principal
+        isMain: safeValue.length === 0 && index === 0, // Primera imagen es principal
         uploadProgress: 0,
       }));
 
-      // Agregar nuevos
-      onChange((prev: ImageFile[]) => [...prev, ...newFiles]);
+      // Agregar nuevos archivos al estado actual
+      const updatedFiles = [...safeValue, ...newFiles];
+      onChange(updatedFiles);
 
       // Simular upload progress
       newFiles.forEach((fileInfo) => {
         const interval = setInterval(() => {
-          onChange((prev: ImageFile[]) =>
-            prev.map((f: ImageFile) =>
+          // Obtener el estado actual directamente desde el componente padre
+          onChange((prevFiles) => {
+            const currentFiles = typeof prevFiles === 'function' ? safeValue : prevFiles;
+            return currentFiles.map((f: ImageFile) =>
               f.id === fileInfo.id
                 ? { ...f, uploadProgress: Math.min((f.uploadProgress || 0) + 10, 100) }
                 : f
-            )
-          );
+            );
+          });
         }, 200);
 
         setTimeout(() => {
           clearInterval(interval);
-          onChange((prev: ImageFile[]) =>
-            prev.map((f: ImageFile) =>
+          onChange((prevFiles) => {
+            const currentFiles = typeof prevFiles === 'function' ? safeValue : prevFiles;
+            return currentFiles.map((f: ImageFile) =>
               f.id === fileInfo.id ? { ...f, uploadProgress: 100 } : f
-            )
-          );
+            );
+          });
         }, 2000);
       });
     },
-    [value, onChange, maxFiles, maxSize]
+    [safeValue, onChange, maxFiles, maxSize]
   );
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
@@ -143,12 +149,12 @@ export function ImageUpload({
   });
 
   const handleRemove = (id: string) => {
-    const fileToRemove = value.find((f) => f.id === id);
+    const fileToRemove = safeValue.find((f) => f.id === id);
     if (fileToRemove?.url && fileToRemove.file) {
       URL.revokeObjectURL(fileToRemove.url);
     }
 
-    const newFiles = value.filter((f) => f.id !== id);
+    const newFiles = safeValue.filter((f) => f.id !== id);
 
     // Si eliminamos la principal, hacer principal la primera
     if (fileToRemove?.isMain && newFiles.length > 0) {
@@ -160,7 +166,7 @@ export function ImageUpload({
 
   const handleSetMain = (id: string) => {
     onChange(
-      value.map((f) => ({
+      safeValue.map((f) => ({
         ...f,
         isMain: f.id === id,
       }))
@@ -178,7 +184,7 @@ export function ImageUpload({
   return (
     <div className="space-y-4">
       {/* Dropzone */}
-      {(!value.length || allowMultiple) && (
+      {(!safeValue.length || allowMultiple) && (
         <div
           {...getRootProps()}
           className={cn(
@@ -226,15 +232,15 @@ export function ImageUpload({
       )}
 
       {/* Lista de imágenes */}
-      {value.length > 0 && (
+      {safeValue.length > 0 && (
         <Card>
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="font-medium">
-                  Imágenes ({value.length}/{maxFiles})
+                  Imágenes ({safeValue.length}/{maxFiles})
                 </h3>
-                {value.some((f) => (f.uploadProgress || 0) < 100) && (
+                {safeValue.some((f) => (f.uploadProgress || 0) < 100) && (
                   <span className="text-sm text-muted-foreground">Subiendo...</span>
                 )}
               </div>
@@ -267,7 +273,7 @@ export function ImageUpload({
               )}
             >
               <AnimatePresence mode="popLayout">
-                {value.map((file) => (
+                {safeValue.map((file) => (
                   <motion.div
                     key={file.id}
                     layout

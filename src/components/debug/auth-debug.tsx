@@ -1,16 +1,29 @@
+// src/components/debug/auth-debug.tsx
 'use client';
 
 import { useAuthStore } from '@/store/auth.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Cookies from 'js-cookie';
+import { useEffect, useState } from 'react';
 
 export function AuthDebug() {
   const { user, token, isAuthenticated } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const [cookieToken, setCookieToken] = useState<string | null>(null);
+  const [localStorageToken, setLocalStorageToken] = useState<string | null>(null);
   
-  const cookieToken = Cookies.get('token');
-  const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  useEffect(() => {
+    setMounted(true);
+    setCookieToken(Cookies.get('token') || null);
+    setLocalStorageToken(typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  }, []);
   
   if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+  
+  // No renderizar hasta que esté montado en el cliente
+  if (!mounted) {
     return null;
   }
   

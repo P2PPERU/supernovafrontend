@@ -1,4 +1,3 @@
-// src/app/admin/news/rich-text-editor.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -29,12 +28,17 @@ import {
   Redo,
   Maximize,
   X,
-  Check
+  Check,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
+import { uploadService } from '@/services/upload.service';
 
 interface RichTextEditorProps {
   value: string;
@@ -62,6 +66,7 @@ export function RichTextEditor({
   onImageUpload
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -75,6 +80,8 @@ export function RichTextEditor({
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Toolbar principal
   const mainToolbar: ToolbarButton[] = [
@@ -261,23 +268,107 @@ export function RichTextEditor({
     }
   };
 
-  // Manejar pegado
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
+  // Manejar pegado con soporte para imágenes
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    let imageHandled = false;
+
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) {
+            await handleImageFile(file);
+            imageHandled = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!imageHandled) {
+      // Pegado normal de texto
+      e.preventDefault();
+      const text = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, text);
+    }
+  };
+
+  // Manejar archivo de imagen
+  const handleImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no debe superar los 5MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setUploadProgress(0);
+
+    try {
+      let url: string;
+
+      // Simular progreso
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+
+      if (onImageUpload) {
+        url = await onImageUpload(file);
+      } else {
+        url = await uploadService.uploadImage(file);
+      }
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      // Insertar la imagen en el editor
+      const html = `
+        <figure class="my-4">
+          <img src="${url}" alt="${file.name}" class="w-full rounded-lg" />
+        </figure>
+      `;
+      document.execCommand('insertHTML', false, html);
+      handleInput();
+
+      toast.success('Imagen subida exitosamente');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Error al subir la imagen');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadProgress(0);
+    }
   };
 
   // Subir imagen desde archivo
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onImageUpload) {
-      try {
-        const url = await onImageUpload(file);
-        setImageUrl(url);
-      } catch (error) {
-        console.error('Error uploading image:', error);
-      }
+    if (file) {
+      await handleImageFile(file);
+    }
+  };
+
+  // Manejar drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+
+    if (imageFile) {
+      await handleImageFile(imageFile);
     }
   };
 
@@ -344,8 +435,20 @@ export function RichTextEditor({
             })}
           </div>
 
+          {/* Progress bar for image upload */}
+          {isUploadingImage && (
+            <div className="px-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Subiendo imagen...</span>
+                <span className="ml-auto">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2 mt-2" />
+            </div>
+          )}
+
           {/* Editor */}
-          <div className="flex-1 border rounded-lg overflow-hidden">
+          <div className="flex-1 border rounded-lg overflow-hidden relative">
             <div
               ref={editorRef}
               contentEditable
@@ -359,8 +462,24 @@ export function RichTextEditor({
               onPaste={handlePaste}
               onMouseUp={updateActiveFormats}
               onKeyUp={updateActiveFormats}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
               dangerouslySetInnerHTML={{ __html: value }}
-              placeholder={placeholder}
+              data-placeholder={placeholder}
+            />
+            {/* Mostrar placeholder cuando está vacío */}
+            {!value && placeholder && (
+              <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">
+                {placeholder}
+              </div>
+            )}
+            {/* Input oculto para subir imágenes */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
             />
           </div>
 
@@ -371,7 +490,7 @@ export function RichTextEditor({
               <span>{charCount} caracteres</span>
               <span>~{Math.ceil(wordCount / 200)} min de lectura</span>
             </div>
-            <span>Markdown y HTML soportados</span>
+            <span>Puedes arrastrar, pegar o subir imágenes</span>
           </div>
         </TabsContent>
 
@@ -423,50 +542,79 @@ export function RichTextEditor({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para imágenes */}
+      {/* Dialog para imágenes actualizado */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Insertar imagen</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="imageUrl">URL de la imagen</Label>
-              <Input
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
-                type="url"
-              />
-            </div>
-            {onImageUpload && (
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">Subir archivo</TabsTrigger>
+              <TabsTrigger value="url">URL</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload" className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-sm text-gray-600 mb-4">
+                  Arrastra una imagen aquí o haz clic para seleccionar
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Seleccionar imagen
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">
+                  JPG, PNG, GIF o WebP. Máximo 5MB.
+                </p>
+              </div>
               <div>
-                <Label htmlFor="imageFile">O sube una imagen</Label>
+                <Label htmlFor="imageAltUpload">Texto alternativo (alt)</Label>
                 <Input
-                  id="imageFile"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
+                  id="imageAltUpload"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                  placeholder="Descripción de la imagen"
                 />
               </div>
-            )}
-            <div>
-              <Label htmlFor="imageAlt">Texto alternativo (alt)</Label>
-              <Input
-                id="imageAlt"
-                value={imageAlt}
-                onChange={(e) => setImageAlt(e.target.value)}
-                placeholder="Descripción de la imagen"
-              />
-            </div>
-          </div>
+            </TabsContent>
+            <TabsContent value="url" className="space-y-4">
+              <div>
+                <Label htmlFor="imageUrl">URL de la imagen</Label>
+                <Input
+                  id="imageUrl"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  type="url"
+                />
+              </div>
+              <div>
+                <Label htmlFor="imageAltUrl">Texto alternativo (alt)</Label>
+                <Input
+                  id="imageAltUrl"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                  placeholder="Descripción de la imagen"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImageDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={insertImage}>
-              Insertar
+            <Button onClick={insertImage} disabled={!imageUrl && isUploadingImage}>
+              {isUploadingImage ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Subiendo...
+                </>
+              ) : (
+                'Insertar'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

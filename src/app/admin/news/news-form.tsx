@@ -20,7 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ImageUpload } from './image-upload';
+import { ImageUpload, ImageFile } from './image-upload';
 import { RichTextEditor } from './rich-text-editor';
 import { News } from '@/types';
 import { toast } from 'sonner';
@@ -65,8 +65,7 @@ interface NewsFormProps {
 }
 
 export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }: NewsFormProps) {
-  const [image, setImage] = useState<File | null>(null);
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(news?.imageUrl || null);
+  const [images, setImages] = useState<ImageFile[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
 
@@ -104,18 +103,30 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
         featured: news.featured,
         tags: news.tags || [],
       });
-      setCurrentImageUrl(news.imageUrl || null);
+      
+      // Si hay una imagen existente, agregarla al array de images
+      if (news.imageUrl) {
+        setImages([{
+          id: 'existing',
+          url: news.imageUrl,
+          name: 'Imagen actual',
+          size: 0,
+          isMain: true,
+        }]);
+      }
     }
   }, [news, reset]);
 
   const handleFormSubmit = (data: NewsFormData) => {
     const submitData: any = {
       ...data,
-      status: data.status || 'draft', // Asegurar que siempre haya un estado
+      status: data.status || 'draft',
     };
     
-    if (image) {
-      submitData.image = image;
+    // Si hay imágenes nuevas, tomar la primera
+    const newImages = images.filter(img => img.file);
+    if (newImages.length > 0 && newImages[0].file) {
+      submitData.image = newImages[0].file;
     }
     
     console.log('📤 Submitting news with status:', submitData.status);
@@ -158,11 +169,11 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
     setValue('tags', watchedValues.tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleImageChange = (file: File | null) => {
-    setImage(file);
-    if (file) {
-      // Si hay una nueva imagen, no mostrar la actual
-      setCurrentImageUrl(null);
+  const handleImageChange = (newImages: ImageFile[] | ((prev: ImageFile[]) => ImageFile[])) => {
+    if (typeof newImages === 'function') {
+      setImages(newImages);
+    } else {
+      setImages(newImages);
     }
   };
 
@@ -276,13 +287,11 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
             </CardHeader>
             <CardContent>
               <ImageUpload
-                value={image}
-                currentImageUrl={currentImageUrl}
+                value={images}
+                currentImageUrl={news?.imageUrl}
                 onChange={handleImageChange}
-                onRemove={() => {
-                  setImage(null);
-                  setCurrentImageUrl(null);
-                }}
+                maxFiles={1}
+                allowMultiple={false}
               />
             </CardContent>
           </Card>
