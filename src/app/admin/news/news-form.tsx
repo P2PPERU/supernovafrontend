@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload, ImageFile } from './image-upload';
-import { ModernEditor } from './modern-editor';
+import { EnhancedEditor } from './enhanced-editor';
 import { News } from '@/types';
 import { toast } from 'sonner';
 import { 
@@ -67,7 +67,6 @@ interface NewsFormProps {
 export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }: NewsFormProps) {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [previewMode, setPreviewMode] = useState(false);
 
   const {
     register,
@@ -251,10 +250,10 @@ export function NewsForm({ news, onSubmit, isLoading = false, mode = 'create' }:
 
               <div className="space-y-2">
                 <Label htmlFor="content">Contenido *</Label>
-                <ModernEditor
+                <EnhancedEditor
                   value={watchedValues.content}
                   onChange={(value) => setValue('content', value)}
-                  placeholder="Escribe el contenido de la noticia..."
+                  placeholder="Escribe el contenido de la noticia... Puedes arrastrar imágenes directamente al editor"
                   error={!!errors.content}
                 />
                 {errors.content && (

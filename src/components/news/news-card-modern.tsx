@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Sparkles, Zap, Gift, Trophy, Megaphone } from 'lucide-react';
 import { News } from '@/types';
 import { formatRelativeTime } from '@/lib/utils';
+import { Eye } from 'lucide-react';
 
 // Configuración de categorías con colores e iconos
 const categoryConfig = {
@@ -71,62 +72,74 @@ function HeroCard({ news, config }: { news: News; config: any }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6 }}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
       className="group"
     >
       <Link href={`/news/${news.id}`}>
-        <Card className="relative h-[500px] overflow-hidden border-0 bg-gradient-to-br from-gray-900 to-gray-800">
-          {/* Imagen de fondo */}
-          {news.imageUrl ? (
-            <>
-              <Image
-                src={news.imageUrl}
-                alt={news.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
-              <CategoryIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-32 w-32 text-white/5" />
-            </div>
-          )}
-
-          {/* Contenido */}
-          <div className="absolute inset-0 flex flex-col justify-end p-8 lg:p-12">
-            {/* Badge de categoría */}
-            <div className="mb-4">
-              <Badge className={`${config.bgColor} ${config.borderColor} border backdrop-blur-sm`}>
-                <CategoryIcon className="h-3 w-3 mr-1" />
-                {config.label}
-              </Badge>
-            </div>
-
-            {/* Título */}
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4 line-clamp-3">
-              {news.title}
-            </h2>
-
-            {/* Resumen */}
-            {news.summary && (
-              <p className="text-lg text-gray-200 mb-6 line-clamp-2 max-w-3xl">
-                {news.summary}
-              </p>
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-gray-900 to-gray-800">
+          {/* Imagen principal más grande y visible */}
+          <div className="relative h-[600px] w-full">
+            {news.imageUrl ? (
+              <>
+                <Image
+                  src={news.imageUrl}
+                  alt={news.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+              </>
+            ) : (
+              <div className="h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                <CategoryIcon className="h-32 w-32 text-white/10" />
+              </div>
             )}
 
-            {/* Fecha */}
-            <div className="flex items-center gap-2 text-gray-300">
-              <Calendar className="h-4 w-4" />
-              <span className="text-sm">{formatRelativeTime(news.publishedAt || news.createdAt)}</span>
-            </div>
+            {/* Contenido superpuesto */}
+            <div className="absolute inset-0 flex flex-col justify-end p-8 lg:p-12">
+              {/* Badge de categoría */}
+              <div className="mb-4">
+                <Badge className={`${config.bgColor} ${config.borderColor} border backdrop-blur-sm`}>
+                  <CategoryIcon className="h-3 w-3 mr-1" />
+                  {config.label}
+                </Badge>
+                {news.featured && (
+                  <Badge className="ml-2 bg-poker-gold text-black">
+                    Destacado
+                  </Badge>
+                )}
+              </div>
 
-            {/* Efecto de hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              {/* Título */}
+              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4 line-clamp-3">
+                {news.title}
+              </h2>
+
+              {/* Resumen */}
+              {news.summary && (
+                <p className="text-lg text-gray-200 mb-6 line-clamp-3 max-w-4xl">
+                  {news.summary}
+                </p>
+              )}
+
+              {/* Meta información */}
+              <div className="flex items-center gap-4 text-gray-300">
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {formatRelativeTime(news.publishedAt || news.createdAt)}
+                </span>
+                {news.views && (
+                  <span className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    {news.views.toLocaleString()} vistas
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </Card>
       </Link>
