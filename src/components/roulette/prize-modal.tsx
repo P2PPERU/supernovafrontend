@@ -1,18 +1,27 @@
+// components/roulette/prize-modal.tsx
 'use client';
 
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { 
-  Sparkles, 
   Trophy, 
+  Star, 
   Gift, 
-  Star,
-  Coins,
-  Zap
+  Sparkles,
+  AlertCircle,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useEffect } from 'react';
 
 interface Prize {
   id?: string;
@@ -32,13 +41,16 @@ interface Prize {
 interface PrizeModalProps {
   open: boolean;
   onClose: () => void;
-  prize: Prize | null;
+  prize?: Prize | null;
 }
 
 export function PrizeModal({ open, onClose, prize }: PrizeModalProps) {
-  // Efecto de confetti al abrir
-  useEffect(() => {
-    if (open && prize?.isReal) {
+  const isDemo = prize?.type === 'demo' || !prize?.isReal;
+  const prizeValue = prize?.prize?.prize_value || prize?.prize?.value || 0;
+  
+  // Efecto de confetti cuando se abre el modal con premio valioso
+  React.useEffect(() => {
+    if (open && prizeValue >= 100) {
       const duration = 3 * 1000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -49,13 +61,9 @@ export function PrizeModal({ open, onClose, prize }: PrizeModalProps) {
 
       const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
+        if (timeLeft <= 0) return clearInterval(interval);
         
+        const particleCount = 50 * (timeLeft / duration);
         confetti({
           ...defaults,
           particleCount,
@@ -70,110 +78,148 @@ export function PrizeModal({ open, onClose, prize }: PrizeModalProps) {
 
       return () => clearInterval(interval);
     }
-  }, [open, prize?.isReal]);
-
-  if (!prize) return null;
+  }, [open, prizeValue]);
 
   const getPrizeIcon = () => {
-    const type = prize.prize?.prize_type || prize.prize?.type;
-    switch (type) {
+    const prizeType = prize?.prize?.prize_type || prize?.prize?.type;
+    switch (prizeType) {
       case 'cash':
-        return <Coins className="h-16 w-16 text-poker-gold" />;
-      case 'bonus':
-        return <Gift className="h-16 w-16 text-purple-500" />;
-      case 'points':
-        return <Star className="h-16 w-16 text-blue-500" />;
+        return '💰';
       case 'spin':
-        return <Zap className="h-16 w-16 text-poker-green" />;
+        return '🎯';
+      case 'bonus':
+        return '🎁';
+      case 'points':
+        return '⭐';
       default:
-        return <Trophy className="h-16 w-16 text-poker-gold" />;
+        return '🎉';
     }
   };
 
   const getPrizeColor = () => {
-    if (!prize.isReal) return 'from-gray-500 to-gray-600';
-    
-    const value = prize.prize?.prize_value || prize.prize?.value || 0;
-    if (value >= 100) return 'from-poker-gold to-yellow-600';
-    if (value >= 50) return 'from-purple-500 to-purple-600';
-    return 'from-poker-green to-poker-darkGreen';
+    if (prizeValue >= 500) return 'from-yellow-400 to-orange-500';
+    if (prizeValue >= 100) return 'from-purple-400 to-pink-500';
+    if (prizeValue >= 50) return 'from-blue-400 to-cyan-500';
+    return 'from-green-400 to-emerald-500';
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden">
-        <div className={`bg-gradient-to-br ${getPrizeColor()} p-6 text-white`}>
-          {/* Efectos de fondo */}
-          <div className="absolute inset-0 bg-black/20" />
-          
-          {/* Contenido */}
-          <div className="relative z-10">
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-center">
+            {isDemo ? '🎮 Premio Demo' : '🎉 ¡Felicitaciones!'}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {isDemo 
+              ? 'Has ganado un premio de demostración'
+              : 'Has ganado un premio real'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Premio principal */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="text-center py-6"
+          >
             <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", damping: 15 }}
-              className="flex justify-center mb-4"
+              animate={{ 
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                duration: 0.5,
+                repeat: 3
+              }}
+              className="text-8xl mb-4"
             >
               {getPrizeIcon()}
             </motion.div>
+            
+            <h3 className={`text-3xl font-black mb-2 bg-gradient-to-r ${getPrizeColor()} bg-clip-text text-transparent`}>
+              {prize?.prize?.name || 'Premio'}
+            </h3>
+            
+            {prizeValue > 0 && (
+              <motion.p 
+                className="text-4xl font-bold text-gray-800 dark:text-white"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                S/ {prizeValue}
+              </motion.p>
+            )}
+            
+            {prize?.prize?.description && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                {prize.prize.description}
+              </p>
+            )}
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-center"
-            >
-              <h2 className="text-2xl font-bold mb-2">
-                {prize.isReal ? '¡Felicidades!' : '¡Giro Demo!'}
-              </h2>
-              
-              <div className="mb-4">
-                <p className="text-3xl font-bold mb-1">
-                  {prize.prize?.name}
-                </p>
-                {prize.prize?.description && (
-                  <p className="text-sm opacity-90">
-                    {prize.prize.description}
+          {/* Estado del premio */}
+          {isDemo ? (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-300">
+                    Este es un premio de demostración
                   </p>
-                )}
-              </div>
-
-              {!prize.isReal && (
-                <div className="bg-white/20 rounded-lg p-3 mb-4">
-                  <p className="text-sm">
-                    Este fue un giro de demostración.
-                    ¡Completa tu validación para obtener premios reales!
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    Los premios demo no son reales. Valídate para ganar premios de verdad y reclamar tus ganancias.
                   </p>
                 </div>
-              )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-green-800 dark:text-green-300">
+                    ¡Premio Real Confirmado!
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    Este premio ha sido agregado a tu cuenta. Puedes reclamarlo en cualquier momento.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-              {prize.message && (
-                <p className="text-sm opacity-90 mb-4">
-                  {prize.message}
-                </p>
-              )}
-            </motion.div>
+          {/* Mensaje personalizado */}
+          {prize?.message && (
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400 italic">
+              "{prize.message}"
+            </div>
+          )}
 
-            {/* Estrellas decorativas */}
-            <div className="absolute -top-4 -left-4">
-              <Sparkles className="h-8 w-8 opacity-50" />
-            </div>
-            <div className="absolute -top-4 -right-4">
-              <Star className="h-8 w-8 opacity-50" />
-            </div>
-            <div className="absolute -bottom-4 -left-4">
-              <Star className="h-8 w-8 opacity-50" />
-            </div>
-            <div className="absolute -bottom-4 -right-4">
-              <Sparkles className="h-8 w-8 opacity-50" />
-            </div>
+          {/* Botones de acción */}
+          <div className="flex gap-3 pt-4">
+            {isDemo && (
+              <Button 
+                variant="default" 
+                className="flex-1"
+                onClick={() => {
+                  // Aquí podrías redirigir a la página de validación
+                  onClose();
+                }}
+              >
+                Validarme Ahora
+              </Button>
+            )}
+            <Button
+              variant={isDemo ? "outline" : "default"}
+              className="flex-1"
+              onClick={onClose}
+            >
+              {isDemo ? 'Cerrar' : '¡Genial!'}
+            </Button>
           </div>
-        </div>
-
-        <div className="p-4 bg-background">
-          <Button onClick={onClose} className="w-full">
-            {prize.isReal ? '¡Genial!' : 'Entendido'}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

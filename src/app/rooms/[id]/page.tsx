@@ -2,13 +2,11 @@
 
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRoomDetail } from '@/hooks/useRoomDetail';
 import { RoomDetailHero } from '@/components/rooms/room-detail-hero';
 import { RoomBenefits } from '@/components/rooms/room-benefits';
 import { RoomFeatures } from '@/components/rooms/room-features';
 import { RoomPaymentMethods } from '@/components/rooms/room-payment-methods';
 import { RoomStats } from '@/components/rooms/room-stats';
-import { RoomSkeleton } from '@/components/rooms/room-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,16 +19,20 @@ import { getRoomBySlug } from '@/data/rooms-mock';
 
 export default function RoomDetailPage() {
   const params = useParams();
-  const roomId = params.id as string;
+  const roomSlug = params.id as string;
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Por ahora usamos mock data directamente
-  const room = getRoomBySlug(roomId);
-  const isLoading = false; // Simular que no está cargando
+  // Usar datos del mock directamente
+  const room = getRoomBySlug(roomSlug);
+  const isLoading = false;
 
   if (isLoading) {
-    return <RoomSkeleton variant="detail" />;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-poker-green"></div>
+      </div>
+    );
   }
 
   if (!room) {
@@ -108,7 +110,61 @@ export default function RoomDetailPage() {
       </div>
 
       {/* Hero Section */}
-      <RoomDetailHero room={room} />
+      <section className="relative py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-poker-green/10 via-transparent to-poker-purple/10 opacity-50" />
+        <div className={`absolute inset-0 bg-gradient-to-br ${room.gradientColors.from} ${room.gradientColors.to} opacity-5`} />
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <Badge className={`${room.badgeColor} text-white mb-6 px-4 py-2`}>
+              {room.badge}
+            </Badge>
+            
+            <div className="text-8xl mb-6 font-bold flex justify-center">
+              <img 
+                src={room.images.logo} 
+                alt={`${room.name} Logo`}
+                className="h-24 w-24 object-contain"
+              />
+            </div>
+            
+            <h1 className="text-5xl md:text-6xl font-bold mb-4">{room.name}</h1>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">{room.description}</p>
+            
+            <div className="flex items-center justify-center gap-6 mb-8">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 ${i < Math.floor(room.rating) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-600'}`}
+                    />
+                  ))}
+                </div>
+                <span className="text-lg font-semibold">{room.rating}</span>
+                <span className="text-gray-400">({room.totalReviews} reseñas)</span>
+              </div>
+              <div className="text-gray-400">•</div>
+              <div className="text-lg">
+                <span className="text-poker-green font-semibold">{room.activePlayers}</span> jugadores online
+              </div>
+            </div>
+            
+            <Button 
+              size="lg"
+              className={`bg-gradient-to-r ${room.gradientColors.from} ${room.gradientColors.to} hover:opacity-90 btn-glow text-xl px-12 py-4`}
+            >
+              Registrarme Ahora
+              <ExternalLink className="ml-2 h-6 w-6" />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Navigation Tabs */}
       <div className="sticky top-20 z-40 bg-background/80 backdrop-blur-xl border-b border-white/10">
@@ -232,11 +288,11 @@ export default function RoomDetailPage() {
                   <ul className="space-y-2 mb-8">
                     <li className="flex items-center gap-2 text-sm">
                       <span className="text-poker-green">✓</span>
-                      Bono de bienvenida mejorado
+                      Rakeback exclusivo del {room.rakeback.percentage}%
                     </li>
                     <li className="flex items-center gap-2 text-sm">
                       <span className="text-poker-green">✓</span>
-                      Rakeback adicional exclusivo
+                      Bono de bienvenida de ${room.bonus?.welcome?.maxBonus?.toLocaleString() || '0'}
                     </li>
                     <li className="flex items-center gap-2 text-sm">
                       <span className="text-poker-green">✓</span>
@@ -244,7 +300,7 @@ export default function RoomDetailPage() {
                     </li>
                     <li className="flex items-center gap-2 text-sm">
                       <span className="text-poker-green">✓</span>
-                      Acceso a torneos privados
+                      {room.bonus?.specialOffers?.[0]?.includes('giros') && room.bonus.specialOffers[0]}
                     </li>
                   </ul>
                 </div>
@@ -253,13 +309,13 @@ export default function RoomDetailPage() {
                   <div className="inline-flex flex-col gap-4">
                     <Button 
                       size="lg"
-                      className="bg-gradient-to-r from-poker-green to-poker-blue hover:opacity-90 btn-glow text-lg px-8"
+                      className={`bg-gradient-to-r ${room.gradientColors.from} ${room.gradientColors.to} hover:opacity-90 btn-glow text-lg px-8`}
                     >
                       Registrarme Ahora
                       <ExternalLink className="ml-2 h-5 w-5" />
                     </Button>
                     <p className="text-xs text-gray-500">
-                      * Aplican términos y condiciones
+                      * Beneficios exclusivos por SUPERNOVA
                     </p>
                   </div>
                 </div>

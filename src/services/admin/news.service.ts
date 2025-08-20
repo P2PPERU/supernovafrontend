@@ -62,13 +62,27 @@ interface NewsStats {
 const transformNewsResponse = (news: any): News => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
   
+  // Función helper para construir URLs de imágenes
+  const buildImageUrl = (imagePath: string | null | undefined): string | null => {
+    if (!imagePath) return null;
+    
+    // Si ya es una URL completa, devolverla tal cual
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // Si empieza con /uploads, agregar el baseUrl
+    if (imagePath.startsWith('/uploads')) {
+      return `${baseUrl}${imagePath}`;
+    }
+    
+    // Si no tiene /, agregarlo
+    return `${baseUrl}/${imagePath}`;
+  };
+  
   return {
     ...news,
-    imageUrl: news.image_url 
-      ? `${baseUrl}${news.image_url}` 
-      : news.imageUrl 
-        ? `${baseUrl}${news.imageUrl}`
-        : null,
+    imageUrl: buildImageUrl(news.image_url || news.imageUrl),
     publishedAt: news.publishedAt || news.published_at,
     authorId: news.authorId || news.author_id,
     createdAt: news.createdAt || news.created_at,
@@ -82,8 +96,8 @@ export const adminNewsService = {
     const response = await api.get('/news', { params: filters });
     return {
       ...response.data,
-      data: response.data.news?.map(transformNewsResponse) || [], // CAMBIO: .data → .news
-      totalItems: response.data.totalNews, // AGREGADO
+      data: response.data.news?.map(transformNewsResponse) || [],
+      totalItems: response.data.totalNews,
     };
   },
 
@@ -100,7 +114,6 @@ export const adminNewsService = {
   createNews: async (data: CreateNewsData): Promise<{ success: boolean; news: News }> => {
     const formData = new FormData();
     
-    // Log para debug
     console.log('🚀 Creating news with data:', data);
     
     formData.append('title', data.title);
@@ -109,18 +122,15 @@ export const adminNewsService = {
     formData.append('category', data.category);
     formData.append('status', data.status || 'draft');
     
-    // Log del estado
     console.log('📋 Status being sent:', data.status || 'draft');
     
     if (data.tags && data.tags.length > 0) {
-      // Solo enviar tags si hay al menos uno y no está vacío
       data.tags.forEach(tag => {
         if (tag && tag.trim().length >= 2) {
           formData.append('tags[]', tag.trim());
         }
       });
     }
-    // Si no hay tags válidos, no enviar el campo tags[]
     formData.append('featured', String(data.featured || false));
     
     if (data.image) {
@@ -154,14 +164,12 @@ export const adminNewsService = {
       console.log('📋 Status being updated to:', data.status);
     }
     if (data.tags !== undefined && Array.isArray(data.tags) && data.tags.length > 0) {
-      // Solo enviar tags si hay al menos uno y no está vacío
       data.tags.forEach(tag => {
         if (tag && tag.trim().length >= 2) {
           formData.append('tags[]', tag.trim());
         }
       });
     }
-    // Si no hay tags válidos, no enviar el campo tags[]
     if (data.featured !== undefined) formData.append('featured', String(data.featured));
     if (data.image) formData.append('image', data.image);
 
@@ -191,7 +199,6 @@ export const adminNewsService = {
 
   // Cambiar estado de una noticia (publicar, archivar, etc)
   updateNewsStatus: async (id: string, status: 'draft' | 'published' | 'archived'): Promise<{ success: boolean; news: News }> => {
-    // Usar FormData para mantener consistencia
     const formData = new FormData();
     formData.append('status', status);
     
@@ -211,7 +218,6 @@ export const adminNewsService = {
 
   // Toggle featured
   toggleFeatured: async (id: string, featured: boolean): Promise<{ success: boolean; news: News }> => {
-    // Usar FormData para mantener consistencia
     const formData = new FormData();
     formData.append('featured', String(featured));
     

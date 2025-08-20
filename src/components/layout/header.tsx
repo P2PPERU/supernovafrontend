@@ -54,18 +54,32 @@ export function Header() {
       )}
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          {/* Logo */}
+        <div className="flex h-24 items-center justify-between"> {/* Aumenté altura del nav de h-20 a h-24 */}
+          {/* Logo SUPERNOVA - MÁS GRANDE */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-poker-green rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-poker-green to-poker-darkGreen flex items-center justify-center transform group-hover:scale-110 transition-transform">
-                <span className="text-white font-bold text-xl">♠</span>
+              {/* Efecto glow detrás del logo */}
+              <div className="absolute inset-0 bg-poker-green rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity scale-150" />
+              
+              {/* Logo de SUPERNOVA - TAMAÑO AUMENTADO */}
+              <div className="relative h-16 w-16 lg:h-20 lg:w-20 flex items-center justify-center transform group-hover:scale-110 transition-transform">
+                <img 
+                  src="/images/supernova-logo.png" 
+                  alt="SUPERNOVA Poker Union"
+                  className="h-16 w-16 lg:h-20 lg:w-20 object-contain filter drop-shadow-lg"
+                />
               </div>
             </div>
-            <span className="font-bold text-2xl gradient-text hidden sm:inline-block">
-              SUPERNOVA
-            </span>
+            
+            {/* Texto SUPERNOVA - TAMBIÉN MÁS GRANDE */}
+            <div className="hidden sm:flex flex-col">
+              <span className="font-bold text-2xl lg:text-3xl gradient-text leading-tight">
+                SUPERNOVA
+              </span>
+              <span className="text-xs lg:text-sm text-gray-400 font-medium tracking-wider">
+                POKER UNION
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -203,7 +217,20 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] glass border-white/10">
-                <nav className="flex flex-col space-y-4 mt-8">
+                {/* Logo en mobile - TAMBIÉN MÁS GRANDE */}
+                <div className="flex items-center space-x-3 mb-8">
+                  <img 
+                    src="/images/supernova-logo.png" 
+                    alt="SUPERNOVA"
+                    className="h-14 w-14 object-contain"
+                  />
+                  <div>
+                    <span className="font-bold text-2xl gradient-text">SUPERNOVA</span>
+                    <div className="text-xs text-gray-400">POKER UNION</div>
+                  </div>
+                </div>
+
+                <nav className="flex flex-col space-y-4">
                   {navigation.map((item) => {
                     const Icon = item.icon;
                     return (

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Trophy, Gamepad2, Gift, Shield, Users, Zap, DollarSign, Headphones } from 'lucide-react';
+import { Trophy, Gamepad2, Percent, Shield, Users, Zap, DollarSign, Headphones } from 'lucide-react';
 
 const features = [
   {
@@ -14,52 +14,79 @@ const features = [
   },
   {
     title: 'Ruleta de Premios',
-    description: 'Gira la ruleta diaria y gana premios instantáneos, bonos y mucho más.',
+    description: 'Gira la ruleta diaria y gana premios instantáneos, fichas y mucho más.',
     icon: Gamepad2,
     color: 'from-green-500 to-emerald-600',
     highlight: 'Giros gratis diarios',
   },
   {
-    title: 'Bonos VIP',
-    description: 'Sistema de recompensas exclusivo con bonos personalizados y rakeback.',
-    icon: Gift,
+    title: 'Mejor Rakeback',
+    description: 'Hasta 60% de rakeback en todas las salas - el más alto del mercado.',
+    icon: Percent,
     color: 'from-purple-500 to-pink-600',
     highlight: 'Hasta 60% rakeback',
   },
   {
     title: 'Seguridad Total',
-    description: 'Plataforma certificada con encriptación de última generación.',
+    description: 'Plataforma certificada con encriptación de última generación y fair play.',
     icon: Shield,
     color: 'from-blue-500 to-cyan-600',
     highlight: 'SSL 256-bit',
   },
   {
     title: 'Comunidad Activa',
-    description: 'Únete a miles de jugadores y participa en eventos exclusivos.',
+    description: 'Únete a miles de jugadores en salas activas las 24 horas del día.',
     icon: Users,
     color: 'from-indigo-500 to-purple-600',
-    highlight: '10K+ jugadores activos',
+    highlight: '5K+ jugadores online',
   },
   {
     title: 'Pagos Instantáneos',
-    description: 'Retira tus ganancias al instante con múltiples métodos de pago.',
+    description: 'Retira tus ganancias al instante con múltiples métodos de pago seguros.',
     icon: DollarSign,
     color: 'from-green-500 to-teal-600',
-    highlight: 'Retiros en < 5 min',
+    highlight: 'Retiros en < 10 min',
   },
   {
     title: 'Soporte 24/7',
-    description: 'Equipo de soporte dedicado disponible las 24 horas del día.',
+    description: 'Equipo de soporte especializado en poker disponible siempre.',
     icon: Headphones,
     color: 'from-red-500 to-rose-600',
-    highlight: 'Respuesta < 2 min',
+    highlight: 'Respuesta < 5 min',
   },
   {
     title: 'Multi-plataforma',
-    description: 'Juega desde cualquier dispositivo: PC, móvil o tablet.',
+    description: 'Juega desde cualquier dispositivo con nuestras apps optimizadas.',
     icon: Zap,
     color: 'from-yellow-500 to-amber-600',
     highlight: 'Apps nativas disponibles',
+  },
+];
+
+const stats = [
+  {
+    icon: Trophy,
+    value: '500+',
+    label: 'Torneos Mensuales',
+    color: 'text-poker-gold',
+  },
+  {
+    icon: Users,
+    value: '15K+',
+    label: 'Jugadores Registrados',
+    color: 'text-poker-green',
+  },
+  {
+    icon: DollarSign,
+    value: '$2M+',
+    label: 'Premios Repartidos',
+    color: 'text-green-500',
+  },
+  {
+    icon: Percent,
+    value: '60%',
+    label: 'Rakeback Máximo',
+    color: 'text-poker-purple',
   },
 ];
 
@@ -80,7 +107,7 @@ export function FeaturesSection() {
             ¿Por qué elegir <span className="gradient-text">SUPERNOVA</span>?
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Todo lo que necesitas para llevar tu juego al siguiente nivel
+            La plataforma líder con las mejores condiciones para jugadores serios de poker
           </p>
         </motion.div>
         
@@ -116,7 +143,7 @@ export function FeaturesSection() {
           })}
         </div>
 
-        {/* Feature showcase */}
+        {/* Stats Showcase */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -125,67 +152,62 @@ export function FeaturesSection() {
           className="mt-20"
         >
           <div className="glass rounded-2xl p-8 md:p-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h3 className="text-3xl md:text-4xl font-bold mb-6">
-                  Sistema de <span className="gradient-text">Recompensas VIP</span>
-                </h3>
-                <p className="text-lg text-gray-400 mb-6">
-                  Nuestro programa VIP exclusivo te recompensa por cada partida. 
-                  Acumula puntos, sube de nivel y desbloquea beneficios increíbles.
-                </p>
-                
-                <div className="space-y-4 mb-8">
-                  {[
-                    { level: 'Bronce', rakeback: '20%', bonus: '$100' },
-                    { level: 'Plata', rakeback: '35%', bonus: '$500' },
-                    { level: 'Oro', rakeback: '50%', bonus: '$1,000' },
-                    { level: 'Diamante', rakeback: '60%', bonus: '$2,500' },
-                  ].map((tier) => (
-                    <div key={tier.level} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                      <span className="font-medium">{tier.level}</span>
-                      <div className="flex gap-6">
-                        <span className="text-sm text-gray-400">Rakeback: <span className="text-poker-green font-semibold">{tier.rakeback}</span></span>
-                        <span className="text-sm text-gray-400">Bonus: <span className="text-poker-gold font-semibold">{tier.bonus}</span></span>
-                      </div>
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold mb-4">
+                Los números que nos <span className="gradient-text">respaldan</span>
+              </h3>
+              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+                Miles de jugadores confían en SUPERNOVA para maximizar sus ganancias y disfrutar la mejor experiencia de poker online.
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="text-center group"
+                  >
+                    <div className="glass rounded-xl p-6 hover:scale-105 transition-transform">
+                      <Icon className={`h-8 w-8 ${stat.color} mx-auto mb-3`} />
+                      <div className="text-3xl font-bold mb-1">{stat.value}</div>
+                      <div className="text-sm text-gray-400">{stat.label}</div>
                     </div>
-                  ))}
-                </div>
-                
-                <button className="bg-gradient-to-r from-poker-green to-poker-blue text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
-                  Ver Programa VIP Completo
-                </button>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Benefits Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-6 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                <div className="text-2xl font-bold text-poker-green mb-2">Ganancias Maximizadas</div>
+                <p className="text-gray-400">Con nuestro rakeback del 60%, mantienes más dinero en tu bankroll para seguir jugando.</p>
               </div>
               
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-poker-green to-poker-purple opacity-20 blur-3xl" />
-                <div className="relative grid grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <div className="glass rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
-                      <Trophy className="h-12 w-12 text-poker-gold mx-auto mb-2" />
-                      <div className="text-2xl font-bold">127</div>
-                      <div className="text-sm text-gray-400">Torneos Ganados</div>
-                    </div>
-                    <div className="glass rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
-                      <Gift className="h-12 w-12 text-poker-purple mx-auto mb-2" />
-                      <div className="text-2xl font-bold">$2,847</div>
-                      <div className="text-sm text-gray-400">Bonos Reclamados</div>
-                    </div>
-                  </div>
-                  <div className="space-y-4 mt-8">
-                    <div className="glass rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
-                      <Users className="h-12 w-12 text-poker-green mx-auto mb-2" />
-                      <div className="text-2xl font-bold">1,243</div>
-                      <div className="text-sm text-gray-400">Amigos Referidos</div>
-                    </div>
-                    <div className="glass rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
-                      <DollarSign className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                      <div className="text-2xl font-bold">$18,450</div>
-                      <div className="text-sm text-gray-400">Ganancias Totales</div>
-                    </div>
-                  </div>
-                </div>
+              <div className="text-center p-6 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                <div className="text-2xl font-bold text-poker-purple mb-2">Torneos Garantizados</div>
+                <p className="text-gray-400">Más de 500 torneos mensuales con premios garantizados - siempre hay acción esperándote.</p>
               </div>
+              
+              <div className="text-center p-6 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                <div className="text-2xl font-bold text-poker-gold mb-2">Confianza Total</div>
+                <p className="text-gray-400">Pagos rápidos, soporte experto y la mejor seguridad para que solo te enfoques en ganar.</p>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="text-center mt-12">
+              <button className="bg-gradient-to-r from-poker-green to-poker-blue text-white px-8 py-4 rounded-lg font-medium text-lg hover:opacity-90 transition-opacity shadow-lg">
+                Comenzar a Ganar Ahora
+              </button>
+              <p className="text-sm text-gray-400 mt-3">Registro gratuito • Sin depósito mínimo • Rakeback desde el primer día</p>
             </div>
           </div>
         </motion.div>

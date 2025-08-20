@@ -2,41 +2,62 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Users, Trophy, TrendingUp, Gamepad2, Clock } from 'lucide-react';
+import { DollarSign, Users, Trophy, TrendingUp, Gamepad2, Clock, Star, Award, Percent } from 'lucide-react';
 
 const stats = [
   {
     icon: Users,
-    value: 10847,
+    value: 2000,
     label: 'Jugadores Activos',
     suffix: '+',
     color: 'text-poker-green',
-    increment: 23,
+    increment: 15,
   },
   {
     icon: DollarSign,
-    value: 523450,
+    value: 890000,
     label: 'Premios Entregados',
     prefix: '$',
     color: 'text-poker-gold',
-    increment: 1250,
+    increment: 2500,
   },
   {
     icon: Trophy,
-    value: 1247,
+    value: 2500,
     label: 'Torneos Completados',
-    suffix: '',
+    suffix: '+',
     color: 'text-poker-purple',
-    increment: 3,
+    increment: 8,
   },
   {
-    icon: Gamepad2,
-    value: 98.7,
-    label: 'Satisfacción',
+    icon: Percent,
+    value: 60,
+    label: 'Rakeback Máximo',
     suffix: '%',
     color: 'text-poker-blue',
-    increment: 0.1,
-    decimals: 1,
+    increment: null,
+    decimals: 0,
+  },
+];
+
+const highlights = [
+  {
+    icon: Award,
+    title: 'Plataforma Certificada',
+    description: 'Licenciada y auditada para garantizar fair play',
+    color: 'from-blue-500 to-blue-600',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Crecimiento Constante',
+    description: 'Más de 50 nuevos jugadores se unen cada semana',
+    color: 'from-green-500 to-green-600',
+  },
+  {
+    icon: Star,
+    title: 'Satisfacción 95%+',
+    description: 'Calificación promedio de 4.8/5 estrellas',
+    color: 'from-yellow-500 to-yellow-600',
   },
 ];
 
@@ -86,11 +107,11 @@ export function StatsSection() {
             Números que <span className="gradient-text">Hablan</span>
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            La confianza de miles de jugadores nos respalda
+            La confianza de miles de jugadores nos respalda cada día
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -130,51 +151,96 @@ export function StatsSection() {
           })}
         </div>
 
-        {/* Live activity ticker */}
+        {/* Highlights Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="glass rounded-xl p-6"
+          className="mb-16"
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-poker-green opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-poker-green"></span>
-              </span>
-              Actividad en Vivo
+          <div className="text-center mb-8">
+            <h3 className="text-2xl md:text-3xl font-bold mb-3">
+              Lo que nos hace <span className="gradient-text">diferentes</span>
             </h3>
-            <Clock className="h-5 w-5 text-gray-400" />
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Beneficios reales que marcan la diferencia en tu experiencia de juego
+            </p>
           </div>
-          
-          <div className="space-y-3">
-            {[
-              { user: 'Carlos M.', action: 'ganó $250 en X-POKER', time: 'hace 2 min' },
-              { user: 'Ana P.', action: 'se unió al torneo Premium', time: 'hace 5 min' },
-              { user: 'Luis R.', action: 'recibió 50% rakeback', time: 'hace 7 min' },
-              { user: 'María G.', action: 'ganó el Jackpot de $1,500', time: 'hace 12 min' },
-            ].map((activity, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-poker-green to-poker-blue flex items-center justify-center text-sm font-bold">
-                    {activity.user.charAt(0)}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {highlights.map((highlight, index) => {
+              const Icon = highlight.icon;
+              return (
+                <motion.div
+                  key={highlight.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="relative group"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${highlight.color} opacity-10 rounded-xl blur-xl group-hover:opacity-20 transition-opacity`} />
+                  
+                  <div className="relative glass rounded-xl p-6 text-center card-hover">
+                    <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${highlight.color} bg-opacity-10 mb-4`}>
+                      <Icon className="h-8 w-8 text-white" />
+                    </div>
+                    
+                    <h4 className="text-xl font-semibold mb-2">{highlight.title}</h4>
+                    <p className="text-gray-400 text-sm">{highlight.description}</p>
                   </div>
-                  <div className="text-sm">
-                    <span className="font-medium">{activity.user}</span>
-                    <span className="text-gray-400"> {activity.action}</span>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500">{activity.time}</span>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Bottom CTA Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center"
+        >
+          <div className="glass rounded-2xl p-8 md:p-12">
+            <h3 className="text-3xl md:text-4xl font-bold mb-4">
+              ¿Listo para <span className="gradient-text">maximizar</span> tus ganancias?
+            </h3>
+            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+              Únete a más de 2,000 jugadores que ya disfrutan del mejor rakeback y los mejores torneos.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button className="bg-gradient-to-r from-poker-green to-poker-blue text-white px-8 py-4 rounded-lg font-medium text-lg hover:opacity-90 transition-opacity shadow-lg">
+                Registrarse Gratis
+              </button>
+              <button className="border border-poker-green/50 text-poker-green px-8 py-4 rounded-lg font-medium text-lg hover:bg-poker-green/10 transition-colors">
+                Ver Salas Disponibles
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-poker-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Sin depósito mínimo
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-poker-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Rakeback desde el primer día
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-poker-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Soporte 24/7
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
