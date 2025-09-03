@@ -106,6 +106,33 @@
   }
 }
 
+/* ====== ANIMACIONES PARA CARTAS FLOTANTES ====== */
+/* Animación de flotación para los símbolos de cartas */
+@keyframes floating {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.1;
+  }
+  33% {
+    transform: translateY(-20px) rotate(5deg);
+    opacity: 0.08;
+  }
+  66% {
+    transform: translateY(10px) rotate(-5deg);
+    opacity: 0.12;
+  }
+}
+
+/* Animación de rotación lenta para cartas */
+@keyframes rotating-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* News Section Specific Animations */
 @keyframes news-ticker {
   0% { transform: translateX(100%); }
@@ -195,9 +222,14 @@
   left: 100%;
 }
 
-/* Floating animation */
+/* Floating animation - ACTUALIZADA para cartas */
 .floating {
-  animation: float 3s ease-in-out infinite;
+  animation: floating 8s ease-in-out infinite;
+}
+
+/* Rotating slow animation para cartas */
+.rotating-slow {
+  animation: rotating-slow 30s linear infinite;
 }
 
 /* Pulse glow animation */
@@ -439,17 +471,7 @@
   animation-delay: 4s;
 }
 
-/* Hover effects modernos */
-.hover-lift {
-  transition: all 0.3s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-}
-
-/* Glass morphism mejorado */
+/* Glass morphism mejorado (sin duplicar hover-lift) */
 .glass-enhanced {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);

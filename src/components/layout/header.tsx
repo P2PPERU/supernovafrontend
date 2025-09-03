@@ -41,6 +41,24 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Inyectar estilos CSS para animaciones
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = `
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+      
+      @keyframes shine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+    `;
+    document.head.appendChild(styleElement);
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   return (
     <motion.header
       initial={{ y: -100 }}
@@ -54,29 +72,89 @@ export function Header() {
       )}
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-24 items-center justify-between"> {/* Aumenté altura del nav de h-20 a h-24 */}
-          {/* Logo SUPERNOVA - MÁS GRANDE */}
+        <div className="flex h-24 items-center justify-between">
+          {/* Logo SUPERNOVA con efecto 3D metálico */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Efecto glow detrás del logo */}
-              <div className="absolute inset-0 bg-poker-green rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity scale-150" />
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-green-500 to-blue-500 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity scale-150" />
               
-              {/* Logo de SUPERNOVA - TAMAÑO AUMENTADO */}
+              {/* Logo de SUPERNOVA */}
               <div className="relative h-16 w-16 lg:h-20 lg:w-20 flex items-center justify-center transform group-hover:scale-110 transition-transform">
                 <img 
                   src="/images/supernova-logo.png" 
                   alt="SUPERNOVA Poker Union"
-                  className="h-16 w-16 lg:h-20 lg:w-20 object-contain filter drop-shadow-lg"
+                  className="h-16 w-16 lg:h-20 lg:w-20 object-contain filter drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]"
                 />
               </div>
             </div>
             
-            {/* Texto SUPERNOVA - TAMBIÉN MÁS GRANDE */}
+            {/* Texto SUPERNOVA con efecto 3D metálico */}
             <div className="hidden sm:flex flex-col">
-              <span className="font-bold text-2xl lg:text-3xl gradient-text leading-tight">
-                SUPERNOVA
-              </span>
-              <span className="text-xs lg:text-sm text-gray-400 font-medium tracking-wider">
+              <div className="relative">
+                {/* Texto principal con efecto 3D */}
+                <h1 
+                  className="text-3xl lg:text-4xl xl:text-5xl leading-none font-black tracking-wider"
+                  style={{
+                    fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
+                    fontWeight: 900,
+                    fontStyle: 'italic',
+                    textTransform: 'uppercase',
+                    color: '#ffffff',
+                    textShadow: `
+                      0 1px 0 #ccc,
+                      0 2px 0 #c9c9c9,
+                      0 3px 0 #bbb,
+                      0 4px 0 #b9b9b9,
+                      0 5px 0 #aaa,
+                      0 6px 1px rgba(0,0,0,.1),
+                      0 0 5px rgba(0,0,0,.1),
+                      0 1px 3px rgba(0,0,0,.3),
+                      0 3px 5px rgba(0,0,0,.2),
+                      0 5px 10px rgba(0,0,0,.25),
+                      0 10px 10px rgba(0,0,0,.2),
+                      0 20px 20px rgba(0,0,0,.15),
+                      2px 2px 0 #000,
+                      3px 3px 0 #000,
+                      4px 4px 0 #000,
+                      5px 5px 5px rgba(0,0,0,0.8)
+                    `,
+                    WebkitTextStroke: '1px #000',
+                    background: 'linear-gradient(180deg, #ffffff 0%, #c0c0c0 50%, #808080 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    filter: 'drop-shadow(0 0 3px rgba(255,255,255,0.5))',
+                    transform: 'perspective(300px) rotateX(-5deg)',
+                  }}
+                >
+                  SUPERNOVA
+                </h1>
+                
+                {/* Reflejo metálico animado */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.7) 50%, transparent 60%)',
+                    animation: 'shine 3s ease-in-out infinite',
+                    mixBlendMode: 'overlay',
+                  }}
+                />
+              </div>
+              
+              {/* Subtítulo POKER UNION */}
+              <span 
+                className="text-xs lg:text-sm mt-1 font-bold tracking-[0.3em]"
+                style={{
+                  fontFamily: "'Orbitron', sans-serif",
+                  background: 'linear-gradient(90deg, #10b981 0%, #22d3ee 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  textShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+                  textTransform: 'uppercase',
+                }}
+              >
                 POKER UNION
               </span>
             </div>
@@ -94,7 +172,7 @@ export function Header() {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.name}</span>
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-poker-green group-hover:w-full transition-all duration-300" />
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-yellow-500 to-green-500 group-hover:w-full transition-all duration-300" />
                 </Link>
               );
             })}
@@ -217,16 +295,54 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] glass border-white/10">
-                {/* Logo en mobile - TAMBIÉN MÁS GRANDE */}
+                {/* Logo en mobile con efecto 3D */}
                 <div className="flex items-center space-x-3 mb-8">
                   <img 
                     src="/images/supernova-logo.png" 
                     alt="SUPERNOVA"
-                    className="h-14 w-14 object-contain"
+                    className="h-14 w-14 object-contain filter drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"
                   />
                   <div>
-                    <span className="font-bold text-2xl gradient-text">SUPERNOVA</span>
-                    <div className="text-xs text-gray-400">POKER UNION</div>
+                    <h2 
+                      className="text-2xl font-black"
+                      style={{
+                        fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
+                        fontWeight: 900,
+                        fontStyle: 'italic',
+                        textTransform: 'uppercase',
+                        color: '#ffffff',
+                        textShadow: `
+                          0 1px 0 #ccc,
+                          0 2px 0 #c9c9c9,
+                          0 3px 0 #bbb,
+                          0 4px 0 #b9b9b9,
+                          0 5px 0 #aaa,
+                          0 6px 1px rgba(0,0,0,.1),
+                          2px 2px 0 #000,
+                          3px 3px 5px rgba(0,0,0,0.8)
+                        `,
+                        WebkitTextStroke: '0.5px #000',
+                        background: 'linear-gradient(180deg, #ffffff 0%, #c0c0c0 50%, #808080 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      SUPERNOVA
+                    </h2>
+                    <div 
+                      className="text-xs font-bold tracking-[0.3em]"
+                      style={{
+                        fontFamily: "'Orbitron', sans-serif",
+                        background: 'linear-gradient(90deg, #10b981 0%, #22d3ee 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      POKER UNION
+                    </div>
                   </div>
                 </div>
 
