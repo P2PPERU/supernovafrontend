@@ -103,8 +103,48 @@ export interface RouletteStats {
   }>;
 }
 
+export interface DashboardStats {
+  totalUsers: number;
+  monthlyRevenue: number;
+  totalSpins: number;
+  activeBonus: number;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    action: string;
+    user?: string;
+    amount?: number;
+    count?: number;
+    time: string;
+  }>;
+  monthlyRevenueData: Array<{
+    month: string;
+    total: number;
+  }>;
+  weeklyActivity: Array<{
+    day: string;
+    users: number;
+    spins: number;
+  }>;
+}
+
+export interface RouletteCode {
+  id: string;
+  code: string;
+  maxUses: number;
+  currentUses: number;
+  expiresAt?: string;
+  createdBy: {
+    id: string;
+    username: string;
+  };
+  createdAt: string;
+  status: 'active' | 'used' | 'expired';
+}
+
 export const adminRouletteService = {
   // === PREMIOS ===
+  
   // Obtener todos los premios
   getPrizes: async (filters?: { isActive?: boolean }) => {
     const response = await api.get('/roulette/prizes', { params: filters });
@@ -136,12 +176,43 @@ export const adminRouletteService = {
   },
 
   // Ajustar probabilidades automáticamente
-  adjustProbabilities: async (prizes: Array<{ id: string; probability: number }>) => {
-    const response = await api.post('/roulette/prizes/adjust-probabilities', { prizes });
+  adjustProbabilities: async (probabilities: Array<{ prize_id: string; probability: number }>) => {
+    const response = await api.put('/roulette/prizes/adjust-probabilities', { probabilities });
+    return response.data;
+  },
+
+  // Reordenar premios
+  reorderPrizes: async (prizes: Array<{ id: string; position: number }>) => {
+    const response = await api.put('/roulette/prizes/reorder', { prizes });
+    return response.data;
+  },
+
+  // Clonar premio
+  clonePrize: async (id: string, position?: number) => {
+    const response = await api.post(`/roulette/prizes/${id}/clone`, { position });
+    return response.data;
+  },
+
+  // Actualización masiva de premios
+  bulkUpdatePrizes: async (prizes: Partial<RoulettePrize>[]) => {
+    const response = await api.put('/roulette/prizes/bulk-update', { prizes });
+    return response.data;
+  },
+
+  // Toggle estado de múltiples premios
+  toggleMultiplePrizes: async (prizeIds: string[], isActive: boolean) => {
+    const response = await api.put('/roulette/prizes/toggle-status', { prizeIds, isActive });
+    return response.data;
+  },
+
+  // Restablecer premios por defecto
+  resetDefaultPrizes: async () => {
+    const response = await api.post('/roulette/reset-defaults');
     return response.data;
   },
 
   // === VALIDACIONES ===
+  
   // Obtener validaciones pendientes
   getPendingValidations: async (filters?: { page?: number; limit?: number }) => {
     const response = await api.get('/roulette/pending-validations', { params: filters });
@@ -177,6 +248,7 @@ export const adminRouletteService = {
   },
 
   // === ESTADÍSTICAS ===
+  
   // Obtener estadísticas generales
   getStats: async (filters?: {
     startDate?: string;
@@ -187,6 +259,14 @@ export const adminRouletteService = {
     return response.data;
   },
 
+  // Obtener estadísticas del dashboard
+  getDashboardStats: async () => {
+    const response = await api.get('/roulette/dashboard-stats');
+    return response.data;
+  },
+
+  // === CÓDIGOS ===
+  
   // Obtener códigos de ruleta
   getCodes: async (filters?: { 
     page?: number; 
@@ -205,6 +285,142 @@ export const adminRouletteService = {
     expiresAt?: string;
   }) => {
     const response = await api.post('/roulette/codes', data);
+    return response.data;
+  },
+
+  // Actualizar código
+  updateCode: async (id: string, data: {
+    maxUses?: number;
+    expiresAt?: string;
+  }) => {
+    const response = await api.put(`/roulette/codes/${id}`, data);
+    return response.data;
+  },
+
+  // Eliminar código
+  deleteCode: async (id: string) => {
+    const response = await api.delete(`/roulette/codes/${id}`);
+    return response.data;
+  },
+
+  // === CONFIGURACIÓN ===
+  
+  // Exportar configuración
+  exportConfig: async () => {
+    const response = await api.get('/roulette/config/export');
+    return response.data;
+  },
+
+  // Importar configuración
+  importConfig: async (config: any, replaceExisting?: boolean) => {
+    const response = await api.post('/roulette/config/import', { 
+      config, 
+      replaceExisting 
+    });
+    return response.data;
+  },
+
+  // Obtener vista previa
+  getPreview: async () => {
+    const response = await api.get('/roulette/preview');
+    return response.data;
+  },
+
+  // === REPORTES ===
+  
+  // Generar reporte
+  generateReport: async (filters: {
+    startDate: string;
+    endDate: string;
+    type: 'summary' | 'detailed' | 'users' | 'prizes';
+    format: 'json' | 'csv' | 'pdf';
+  }) => {
+    const response = await api.post('/roulette/reports/generate', filters);
+    
+    // Si el formato es CSV o PDF, manejar como blob
+    if (filters.format === 'csv' || filters.format === 'pdf') {
+      const blob = new Blob([response.data], { 
+        type: filters.format === 'csv' ? 'text/csv' : 'application/pdf' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `roulette-report-${filters.type}-${new Date().toISOString().split('T')[0]}.${filters.format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      return { success: true };
+    }
+    
+    return response.data;
+  },
+
+  // === UTILIDADES ===
+  
+  // Obtener resumen de actividad
+  getActivitySummary: async (userId?: string) => {
+    const response = await api.get('/roulette/activity-summary', {
+      params: { userId }
+    });
+    return response.data;
+  },
+
+  // Obtener log de cambios
+  getChangeLog: async (filters?: {
+    page?: number;
+    limit?: number;
+    entity?: 'prize' | 'code' | 'validation';
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await api.get('/roulette/changelog', { params: filters });
+    return response.data;
+  },
+
+  // Buscar usuarios
+  searchUsers: async (query: string) => {
+    const response = await api.get('/roulette/search-users', {
+      params: { q: query }
+    });
+    return response.data;
+  },
+
+  // Obtener análisis de premios
+  getPrizeAnalytics: async (prizeId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await api.get(`/roulette/prizes/${prizeId}/analytics`, { 
+      params: filters 
+    });
+    return response.data;
+  },
+
+  // Simular giros
+  simulateSpins: async (count: number, prizes?: RoulettePrize[]) => {
+    const response = await api.post('/roulette/simulate', {
+      count,
+      prizes
+    });
+    return response.data;
+  },
+
+  // Obtener configuración del sistema
+  getSystemConfig: async () => {
+    const response = await api.get('/roulette/system-config');
+    return response.data;
+  },
+
+  // Actualizar configuración del sistema
+  updateSystemConfig: async (config: {
+    maxDemoSpinsPerDay?: number;
+    validationRequired?: boolean;
+    autoApproveThreshold?: number;
+    enableBonusSpins?: boolean;
+    bonusSpinInterval?: number;
+  }) => {
+    const response = await api.put('/roulette/system-config', config);
     return response.data;
   },
 };

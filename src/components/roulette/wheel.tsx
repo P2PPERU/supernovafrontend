@@ -10,12 +10,16 @@ interface Prize {
   type?: string;
   isReal?: boolean;
   prize?: {
+    id?: string;
     name: string;
     description?: string;
     prize_type?: string;
     type?: string;
     prize_value?: number;
     value?: number;
+    color?: string;
+    icon?: string;
+    position?: number;
   };
   message?: string;
 }
@@ -24,111 +28,113 @@ interface RouletteWheelProps {
   isSpinning: boolean;
   onSpinComplete: () => void;
   lastPrize?: Prize | null | undefined;
-  prizes?: any[];
+  prizes?: any[]; // Premios desde el backend
 }
 
-// Configuración de premios con diseño mejorado
-const PRIZES = [
+// Premios por defecto (solo se usan si no hay premios del backend)
+const DEFAULT_PRIZES = [
   { 
-    id: 1, 
-    name: "S/ 200 MEGA", 
+    id: '1', 
+    name: "S/ 200", 
     shortName: "200", 
-    color: "#FFD700", 
-    gradient: "linear-gradient(135deg, #FFD700, #FFA500)",
+    color: "#FFD700",
     probability: 3, 
-    value: 200, 
+    prize_value: 200, 
     icon: "🏆",
-    rarity: "legendary"
+    position: 1,
+    rarity: 'legendary' as const
   },
   { 
-    id: 2, 
-    name: "GIRO EXTRA", 
+    id: '2', 
+    name: "GIRO", 
     shortName: "SPIN", 
     color: "#4ECDC4",
-    gradient: "linear-gradient(135deg, #4ECDC4, #44A08D)", 
     probability: 20, 
-    value: 0, 
+    prize_value: 0, 
     icon: "🎯",
-    rarity: "common"
+    position: 2,
+    rarity: 'common' as const
   },
   { 
-    id: 3, 
+    id: '3', 
     name: "S/ 100", 
     shortName: "100", 
     color: "#FF6B6B",
-    gradient: "linear-gradient(135deg, #FF6B6B, #C44569)", 
     probability: 5, 
-    value: 100, 
+    prize_value: 100, 
     icon: "💰",
-    rarity: "epic"
+    position: 3,
+    rarity: 'legendary' as const
   },
   { 
-    id: 4, 
-    name: "50% BONUS", 
+    id: '4', 
+    name: "50%", 
     shortName: "50%", 
     color: "#95E1D3",
-    gradient: "linear-gradient(135deg, #95E1D3, #3AA89D)", 
     probability: 15, 
-    value: 0, 
+    prize_value: 0, 
     icon: "🎁",
-    rarity: "rare"
+    position: 4,
+    rarity: 'epic' as const
   },
   { 
-    id: 5, 
+    id: '5', 
     name: "S/ 50", 
     shortName: "50", 
     color: "#A8E6CF",
-    gradient: "linear-gradient(135deg, #A8E6CF, #7FD1B0)", 
     probability: 10, 
-    value: 50, 
+    prize_value: 50, 
     icon: "💵",
-    rarity: "rare"
+    position: 5,
+    rarity: 'epic' as const
   },
   { 
-    id: 6, 
-    name: "PUNTOS x2", 
+    id: '6', 
+    name: "x2", 
     shortName: "x2", 
     color: "#C7CEEA",
-    gradient: "linear-gradient(135deg, #C7CEEA, #9FA5D5)", 
     probability: 25, 
-    value: 0, 
+    prize_value: 0, 
     icon: "⭐",
-    rarity: "common"
+    position: 6,
+    rarity: 'common' as const
   },
   { 
-    id: 7, 
-    name: "S/ 500 JACKPOT", 
-    shortName: "500", 
-    color: "#FECA57",
-    gradient: "linear-gradient(135deg, #FECA57, #FFA502)", 
-    probability: 1, 
-    value: 500, 
-    icon: "💎",
-    rarity: "mythic"
-  },
-  { 
-    id: 8, 
+    id: '7', 
     name: "S/ 20", 
     shortName: "20", 
     color: "#DDA0DD",
-    gradient: "linear-gradient(135deg, #DDA0DD, #BA68C8)", 
-    probability: 21, 
-    value: 20, 
+    probability: 22, 
+    prize_value: 20, 
     icon: "💸",
-    rarity: "common"
+    position: 7,
+    rarity: 'common' as const
   },
 ];
 
-export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: RouletteWheelProps) {
+export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize, prizes = [] }: RouletteWheelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentRotation, setCurrentRotation] = useState<number>(0);
   const [showPrizeAnimation, setShowPrizeAnimation] = useState<boolean>(false);
-  const [winningPrize, setWinningPrize] = useState<typeof PRIZES[0] | null>(null);
+  const [winningPrize, setWinningPrize] = useState<any>(null);
   const [showLights, setShowLights] = useState<boolean>(false);
   const animationIdRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const targetRotationRef = useRef<number>(0);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
+
+  // Usar premios del backend o por defecto
+  const PRIZES = prizes.length > 0 ? prizes.map(p => ({
+    id: p.id,
+    name: p.name,
+    shortName: p.name.length > 8 ? p.name.substring(0, 8) : p.name,
+    color: p.color || '#FFD700',
+    probability: p.probability,
+    prize_value: p.prize_value || 0,
+    icon: p.icon || '🎁',
+    position: p.position,
+    rarity: p.probability <= 5 ? 'legendary' : p.probability <= 15 ? 'epic' : 'common'
+  })).sort((a, b) => a.position - b.position) : DEFAULT_PRIZES;
 
   // Función auxiliar para oscurecer colores
   const shadeColor = (color: string, percent: number) => {
@@ -312,7 +318,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
       ctx.fillText(prize.icon, radius * 0.65, 0);
       
       // Texto del premio con mejor estilo
-      ctx.font = 'bold 18px Arial';
+      ctx.font = 'bold 14px Arial';
       ctx.fillStyle = '#FFFFFF';
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.lineWidth = 3;
@@ -533,7 +539,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
         fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
         fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
         fire(0.1, { spread: 120, startVelocity: 45 });
-      } else if (prize.value >= 50) {
+      } else if (prize.prize_value >= 50) {
         // Confetti estándar para premios buenos
         confetti({
           particleCount: 100,
@@ -558,11 +564,21 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
       setShowLights(true);
       startTimeRef.current = 0;
       
-      // Calcular rotación objetivo (premio aleatorio + vueltas extra)
-      const randomPrizeIndex = Math.floor(Math.random() * PRIZES.length);
+      // Usar el premio del backend si viene en lastPrize
+      let targetPrizeIndex = -1;
+      if (lastPrize?.prize) {
+        // Buscar el índice del premio ganador
+        targetPrizeIndex = PRIZES.findIndex(p => p.id === lastPrize.prize?.id);
+      }
+      
+      // Si no se encuentra o no hay premio, seleccionar uno aleatorio
+      if (targetPrizeIndex === -1) {
+        targetPrizeIndex = Math.floor(Math.random() * PRIZES.length);
+      }
+      
       const segmentAngle = (2 * Math.PI) / PRIZES.length;
       const extraSpins = 8 + Math.random() * 4; // 8-12 vueltas
-      targetRotationRef.current = currentRotation + extraSpins * 2 * Math.PI + randomPrizeIndex * segmentAngle + segmentAngle / 2;
+      targetRotationRef.current = currentRotation + extraSpins * 2 * Math.PI + targetPrizeIndex * segmentAngle + segmentAngle / 2;
       
       // Iniciar animación
       animationIdRef.current = window.requestAnimationFrame(animate);
@@ -573,7 +589,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
         window.cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, [isSpinning]);
+  }, [isSpinning, lastPrize]);
 
   // Dibujar inicial y cuando no está girando
   useEffect(() => {
@@ -595,7 +611,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
       drawWheel(ctx, centerX, centerY, radius, currentRotation);
       drawPointer(ctx, centerX, centerY, radius);
     }
-  }, [currentRotation, isAnimating]);
+  }, [currentRotation, isAnimating, PRIZES]);
 
   return (
     <div className="relative w-full max-w-[600px] mx-auto">
@@ -754,7 +770,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 shadow-2xl border-4 border-poker-gold relative overflow-hidden">
                 {/* Fondo animado */}
                 <div className="absolute inset-0 opacity-20">
-                  <div className="absolute inset-0" style={{ background: winningPrize.gradient }} />
+                  <div className="absolute inset-0" style={{ backgroundColor: winningPrize.color }} />
                 </div>
                 
                 <div className="text-center relative z-10">
@@ -774,7 +790,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
                   <h3 className="text-3xl font-black text-white mb-2">
                     ¡{winningPrize.name}!
                   </h3>
-                  {winningPrize.value > 0 && (
+                  {winningPrize.prize_value > 0 && (
                     <motion.p 
                       className="text-2xl text-poker-gold font-bold"
                       animate={{
@@ -785,7 +801,7 @@ export function RouletteWheel({ isSpinning, onSpinComplete, lastPrize }: Roulett
                         repeat: Infinity,
                       }}
                     >
-                      Has ganado S/ {winningPrize.value}
+                      Has ganado S/ {winningPrize.prize_value}
                     </motion.p>
                   )}
                   
