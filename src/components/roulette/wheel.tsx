@@ -24,6 +24,7 @@ interface RouletteWheelProps {
   isSpinning: boolean;
   onSpinComplete: () => void;
   lastPrize?: Prize | null | undefined;
+  prizes?: any[];
 }
 
 // Configuración de premios con diseño mejorado

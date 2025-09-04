@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, Home, Trophy, Gamepad2, Newspaper, User, Shield, LogOut, Settings, Wallet, Gift } from 'lucide-react';
+import { Menu, X, Home, Trophy, Gamepad2, Newspaper, User, Shield, LogOut, Settings, Wallet, Gift, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +24,7 @@ const navigation = [
   { name: 'Inicio', href: '/', icon: Home },
   { name: 'Salas', href: '/rooms', icon: Gamepad2 },
   { name: 'Torneos', href: '/tournaments', icon: Trophy },
+  { name: 'Ruleta', href: '/roulette', icon: Zap },
   { name: 'Noticias', href: '/news', icon: Newspaper },
 ];
 
