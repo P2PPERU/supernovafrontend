@@ -34,7 +34,16 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAdminPrizes, useDeletePrize, useTogglePrizeStatus, useAdjustProbabilities } from '@/hooks/admin/useRoulette';
+
+// IMPORTAR LOS HOOKS QUE YA TIENES
+import { 
+  useAdminPrizes, 
+  useDeletePrize, 
+  useTogglePrizeStatus, 
+  useAdjustProbabilities,
+  useResetDefaultPrizes 
+} from '@/hooks/admin/useRoulette';
+
 import { RoulettePrize } from '@/services/admin/roulette.service';
 import { formatCurrency } from '@/lib/utils';
 import { 
@@ -53,7 +62,9 @@ import {
   BarChart3,
   Shuffle,
   Info,
-  CheckCircle
+  CheckCircle,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -66,11 +77,14 @@ export default function AdminPrizesPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
   const [showProbabilityAdjuster, setShowProbabilityAdjuster] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
-  const { data, isLoading } = useAdminPrizes({ isActive: showInactive ? undefined : true });
+  // USAR LOS HOOKS REALES DE TU APLICACIÓN
+  const { data, isLoading, refetch } = useAdminPrizes({ isActive: showInactive ? undefined : true });
   const deletePrize = useDeletePrize();
   const toggleStatus = useTogglePrizeStatus();
   const adjustProbabilities = useAdjustProbabilities();
+  const resetDefaultPrizes = useResetDefaultPrizes();
 
   const prizes = data?.prizes || [];
   const activePrizes = prizes.filter((p: RoulettePrize) => p.isActive);
@@ -147,6 +161,15 @@ export default function AdminPrizesPage() {
     );
   };
 
+  // Función para obtener rareza basada en probabilidad
+  const getRarityBadge = (probability: number) => {
+    if (probability <= 1) return { text: 'MÍTICO', color: 'bg-gradient-to-r from-yellow-500 to-amber-600' };
+    if (probability <= 5) return { text: 'LEGENDARIO', color: 'bg-gradient-to-r from-purple-500 to-purple-700' };
+    if (probability <= 10) return { text: 'ÉPICO', color: 'bg-gradient-to-r from-blue-500 to-blue-700' };
+    if (probability <= 20) return { text: 'RARO', color: 'bg-gradient-to-r from-green-500 to-green-700' };
+    return { text: 'COMÚN', color: 'bg-gradient-to-r from-gray-500 to-gray-700' };
+  };
+
   const handleDelete = () => {
     if (!selectedPrize) return;
     
@@ -164,13 +187,22 @@ export default function AdminPrizesPage() {
 
   const handleAutoAdjust = () => {
     const adjustedPrizes = activePrizes.map((prize: RoulettePrize) => ({
-      id: prize.id,  // Usar 'id' en lugar de 'prize_id'
+      prize_id: prize.id,
       probability: parseFloat((prize.probability * (100 / totalProbability)).toFixed(2))
     }));
 
     adjustProbabilities.mutate(adjustedPrizes, {
       onSuccess: () => {
         toast.success('Probabilidades ajustadas automáticamente');
+      }
+    });
+  };
+
+  const handleResetDefaults = () => {
+    resetDefaultPrizes.mutate(undefined, {
+      onSuccess: () => {
+        setShowResetDialog(false);
+        toast.success('Premios restablecidos a valores por defecto');
       }
     });
   };
@@ -205,16 +237,34 @@ export default function AdminPrizesPage() {
             Configura los premios y sus probabilidades
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/roulette/prizes/create">
-            <Plus className="mr-2 h-4 w-4" />
-            Crear Premio
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowResetDialog(true)}
+            className="text-orange-600 hover:text-orange-700"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Restablecer
+          </Button>
+          <Button asChild>
+            <Link href="/admin/roulette/prizes/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Crear Premio
+            </Link>
+          </Button>
+        </div>
       </motion.div>
 
       {/* Alerta de Probabilidades */}
-      {!probabilityStatus.isValid && (
+      {!probabilityStatus.isValid && activePrizes.length > 0 && (
         <motion.div variants={itemVariants}>
           <Card className="border-red-500 bg-red-50 dark:bg-red-900/20">
             <CardContent className="p-4">
@@ -374,13 +424,20 @@ export default function AdminPrizesPage() {
                 {isLoading ? (
                   <div className="p-8 text-center">
                     <div className="inline-flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Cargando premios...</span>
                     </div>
                   </div>
                 ) : prizes.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
-                    No hay premios configurados. Crea el primer premio.
+                    <Gamepad2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No hay premios configurados</p>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => setShowResetDialog(true)}
+                    >
+                      Crear Premios por Defecto
+                    </Button>
                   </div>
                 ) : (
                   <Table>
@@ -390,6 +447,7 @@ export default function AdminPrizesPage() {
                         <TableHead>Tipo</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Probabilidad</TableHead>
+                        <TableHead>Rareza</TableHead>
                         <TableHead>Comportamiento</TableHead>
                         <TableHead>Posición</TableHead>
                         <TableHead>Estado</TableHead>
@@ -397,106 +455,111 @@ export default function AdminPrizesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {prizes.map((prize: RoulettePrize, index: number) => (
-                        <motion.tr
-                          key={prize.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className={!prize.isActive ? 'opacity-50' : ''}
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="h-10 w-10 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: prize.color + '20' }}
-                              >
-                                {prize.icon ? (
-                                  <span className="text-xl">{prize.icon}</span>
-                                ) : (
-                                  getPrizeIcon(prize.prize_type)
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{prize.name}</p>
-                                {prize.description && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {prize.description}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${getPrizeTypeColor(prize.prize_type)} text-white`}>
-                              {prize.prize_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {prize.prize_type === 'cash' ? (
-                              <span className="font-medium">{formatCurrency(prize.prize_value)}</span>
-                            ) : prize.prize_type === 'bonus' ? (
-                              <span className="font-medium">{prize.prize_value}%</span>
-                            ) : prize.prize_type === 'points' ? (
-                              <span className="font-medium">{prize.prize_value} pts</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16">
-                                <Progress 
-                                  value={prize.probability} 
-                                  className={prize.isActive ? '' : 'opacity-50'}
-                                />
-                              </div>
-                              <span className="text-sm font-medium">{prize.probability}%</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getBehaviorBadge(prize.prize_behavior)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{prize.position}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={prize.isActive}
-                              onCheckedChange={() => handleToggleStatus(prize)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/admin/roulette/prizes/${prize.id}`}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Editar
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedPrize(prize);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                  className="text-red-600"
+                      {prizes.map((prize: RoulettePrize, index: number) => {
+                        const rarity = getRarityBadge(prize.probability);
+                        
+                        return (
+                          <motion.tr
+                            key={prize.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={!prize.isActive ? 'opacity-50' : ''}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="h-10 w-10 rounded-lg flex items-center justify-center"
+                                  style={{ backgroundColor: prize.color + '20' }}
                                 >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
+                                  {getPrizeIcon(prize.prize_type)}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{prize.name}</p>
+                                  {prize.description && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {prize.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${getPrizeTypeColor(prize.prize_type)} text-white`}>
+                                {prize.prize_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {prize.prize_type === 'cash' ? (
+                                <span className="font-medium">{formatCurrency(prize.prize_value)}</span>
+                              ) : prize.prize_type === 'bonus' ? (
+                                <span className="font-medium">{prize.prize_value}%</span>
+                              ) : prize.prize_type === 'points' ? (
+                                <span className="font-medium">{prize.prize_value} pts</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16">
+                                  <Progress 
+                                    value={prize.probability} 
+                                    className={prize.isActive ? '' : 'opacity-50'}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">{prize.probability}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${rarity.color} text-white text-xs`}>
+                                {rarity.text}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {getBehaviorBadge(prize.prize_behavior)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{prize.position}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={prize.isActive}
+                                onCheckedChange={() => handleToggleStatus(prize)}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/admin/roulette/prizes/${prize.id}`}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Editar
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedPrize(prize);
+                                      setShowDeleteDialog(true);
+                                    }}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </motion.tr>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -548,50 +611,6 @@ export default function AdminPrizesPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Valor Esperado</CardTitle>
-                  <CardDescription>
-                    Cálculo del retorno promedio por giro
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {activePrizes
-                      .filter((p: RoulettePrize) => p.prize_type === 'cash')
-                      .map((prize: RoulettePrize) => (
-                        <div key={prize.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className="h-8 w-8 rounded flex items-center justify-center"
-                              style={{ backgroundColor: prize.color + '20' }}
-                            >
-                              <Coins className="h-4 w-4" style={{ color: prize.color }} />
-                            </div>
-                            <div>
-                              <p className="font-medium">{prize.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {prize.probability}% × {formatCurrency(prize.prize_value)}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="font-semibold">
-                            {formatCurrency(prize.prize_value * prize.probability / 100)}
-                          </p>
-                        </div>
-                      ))}
-                    <div className="pt-3 border-t">
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-semibold">Valor Esperado Total</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {formatCurrency(stats.totalValue)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -614,6 +633,27 @@ export default function AdminPrizesPage() {
               className="bg-red-600 hover:bg-red-700"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de restablecer premios */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Restablecer premios por defecto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción creará 6 premios predeterminados. Los premios existentes se mantendrán pero se desactivarán.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetDefaults}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Restablecer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

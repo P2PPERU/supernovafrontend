@@ -149,11 +149,27 @@ export default function RoulettePage() {
   // Determinar tipo de giro disponible
   const getSpinType = () => {
     if (!statusData) return null;
+  
+  // Prioridad 1: Giros reales
     if (statusData.has_real_available) return 'real';
-    if (statusData.available_bonus_spins && statusData.available_bonus_spins > 0) return 'bonus';
-    if (statusData.available_demo_spins && statusData.available_demo_spins > 0) return 'demo';
+  
+  // Prioridad 2: Giros bonus (NO mostrar demo si hay bonus)
+   if (statusData.available_bonus_spins && statusData.available_bonus_spins > 0) {
+    return 'bonus';
+    }
+  
+  // Prioridad 3: Giros demo (SOLO si NO hay bonus y NO está validado)
+   if (
+    statusData.available_demo_spins && 
+    statusData.available_demo_spins > 0 && 
+    !statusData.is_validated && 
+    (!statusData.available_bonus_spins || statusData.available_bonus_spins === 0)
+    ) {
+      return 'demo';
+    }
+  
     return null;
-  };
+   };
   
   const spinType = getSpinType();
   
