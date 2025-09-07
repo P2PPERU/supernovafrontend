@@ -9,13 +9,11 @@ import {
   Gift,
   Newspaper,
   Gamepad2,
-  Code2,
   Trophy,
   BarChart3,
   Settings,
   Shield,
   FileText,
-  CheckCircle,
   ChevronRight,
   ChevronDown,
   X
@@ -78,31 +76,11 @@ const menuItems: MenuSection[] = [
         href: '/admin/bonuses',
         icon: Gift,
       },
-    ],
-  },
-  {
-    title: 'Ruleta',
-    items: [
       {
-        title: 'Premios',
-        href: '/admin/roulette/prizes',
+        title: 'Torneos',
+        href: '/admin/tournaments',
         icon: Gamepad2,
-      },
-      {
-        title: 'Validaciones',
-        href: '/admin/roulette/validations',
-        icon: CheckCircle,
-        badge: { text: '5', variant: 'destructive' as const },
-      },
-      {
-        title: 'Códigos',
-        href: '/admin/roulette/codes',
-        icon: Code2,
-      },
-      {
-        title: 'Estadísticas',
-        href: '/admin/roulette/stats',
-        icon: BarChart3,
+        badge: { text: '2', variant: 'default' as const },
       },
     ],
   },
@@ -118,6 +96,11 @@ const menuItems: MenuSection[] = [
         title: 'Reportes',
         href: '/admin/reports',
         icon: FileText,
+      },
+      {
+        title: 'Estadísticas',
+        href: '/admin/stats',
+        icon: BarChart3,
       },
       {
         title: 'Configuración',

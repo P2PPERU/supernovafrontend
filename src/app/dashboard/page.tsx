@@ -6,12 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/auth.store';
-import { useRouletteStatus } from '@/hooks/useRoulette';
 import { formatCurrency, cn } from '@/lib/utils';
 import Link from 'next/link';
 import { 
   Trophy, 
-  Gamepad2, 
   Gift, 
   TrendingUp, 
   Users, 
@@ -24,7 +22,6 @@ import {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const { data: rouletteStatus } = useRouletteStatus();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -35,16 +32,6 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const quickActions = [
-    {
-      title: 'Girar Ruleta',
-      description: rouletteStatus?.status?.has_real_available 
-        ? 'Tienes giros disponibles' 
-        : 'Gira la ruleta demo',
-      icon: Gamepad2,
-      color: 'text-poker-gold',
-      href: '/roulette',
-      badge: rouletteStatus?.status?.has_real_available ? 'Nuevo' : null,
-    },
     {
       title: 'Ver Rankings',
       description: 'Consulta tu posición',
@@ -77,13 +64,6 @@ export default function DashboardPage() {
       trend: 'up',
     },
     {
-      label: 'Giros Disponibles',
-      value: rouletteStatus?.status?.available_bonus_spins || 0,
-      icon: Gamepad2,
-      change: rouletteStatus?.status?.has_real_available ? 'Activo' : 'Demo',
-      trend: rouletteStatus?.status?.has_real_available ? 'up' : 'neutral',
-    },
-    {
       label: 'Posición Ranking',
       value: '#127',
       icon: Trophy,
@@ -112,7 +92,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -151,7 +131,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
@@ -165,11 +145,6 @@ export default function DashboardPage() {
                     <div className={`h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center`}>
                       <Icon className={`h-5 w-5 ${action.color}`} />
                     </div>
-                    {action.badge && (
-                      <span className="bg-poker-green text-white text-xs px-2 py-1 rounded-full">
-                        {action.badge}
-                      </span>
-                    )}
                   </div>
                   <CardTitle className="text-lg mt-4">{action.title}</CardTitle>
                   <CardDescription>{action.description}</CardDescription>
@@ -197,9 +172,9 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {[
-                { action: 'Giro de ruleta', time: 'Hace 2 horas', result: '+S/ 50' },
                 { action: 'Torneo jugado', time: 'Ayer', result: 'Posición #12' },
                 { action: 'Bono reclamado', time: 'Hace 3 días', result: '+S/ 100' },
+                { action: 'Ranking actualizado', time: 'Hace 5 días', result: '+5 posiciones' },
               ].map((activity, index) => (
                 <div key={index} className="flex items-center justify-between py-2">
                   <div>
@@ -272,10 +247,6 @@ export default function DashboardPage() {
               <div className="bg-white/10 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Acciones Pendientes</h4>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex items-center justify-between">
-                    <span>Validaciones de ruleta</span>
-                    <Badge className="bg-poker-gold text-black">5</Badge>
-                  </li>
                   <li className="flex items-center justify-between">
                     <span>Noticias en borrador</span>
                     <Badge variant="secondary">3</Badge>
