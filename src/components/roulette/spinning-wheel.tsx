@@ -45,7 +45,7 @@ export function SpinningWheel() {
   const fetchPrizes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/prizes`, {
+      const response = await fetch(`${API_URL}/roulette/prizes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -68,7 +68,7 @@ export function SpinningWheel() {
   const fetchUserStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/my-status`, {
+      const response = await fetch(`${API_URL}/roulette/my-status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -93,7 +93,7 @@ export function SpinningWheel() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/spin`, {
+      const response = await fetch(`${API_URL}/roulette/spin`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

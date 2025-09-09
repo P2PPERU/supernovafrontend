@@ -59,7 +59,7 @@ export function RouletteGame() {
   const fetchPrizes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/prizes`, {
+      const response = await fetch(`${API_URL}/roulette/prizes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -81,23 +81,30 @@ export function RouletteGame() {
   const fetchUserStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/my-status`, {
+      const response = await fetch(`${API_URL}/roulette/my-status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setUserStatus(data);
-        return data;
+        console.log('Estado del usuario actualizado:', data);
+        
+        if (data.status) {
+          setUserStatus(data.status);
+          return data.status;
+        } else {
+          setUserStatus(data);
+          return data;
+        }
       }
     } catch (error) {
       console.error('Error fetching user status:', error);
     }
+    return null;
   };
 
   const playSound = (type: 'spin' | 'win') => {
     if (!soundEnabled) return;
-    // Agregar sonidos aquí si tienes archivos de audio
   };
 
   const triggerConfetti = () => {
@@ -131,10 +138,12 @@ export function RouletteGame() {
   const handleSpin = async () => {
     if (isSpinning) return;
     
-    if (!userStatus?.has_demo_available && 
-        !userStatus?.has_real_available && 
-        (!userStatus?.available_bonus_spins || userStatus.available_bonus_spins <= 0)) {
-      toast.error('No tienes giros disponibles');
+    const hasSpins = userStatus?.has_demo_available || 
+                    userStatus?.has_real_available || 
+                    (userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0);
+    
+    if (!hasSpins) {
+      toast.error('No tienes giros disponibles. Usa un código promocional para obtener más giros.');
       return;
     }
 
@@ -143,7 +152,7 @@ export function RouletteGame() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/spin`, {
+      const response = await fetch(`${API_URL}/roulette/spin`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -153,17 +162,35 @@ export function RouletteGame() {
 
       if (response.ok) {
         const result = await response.json();
-        const winningPrizeIndex = prizes.findIndex(p => p.id === result.spin.prize.id);
+        console.log('Resultado del giro:', result);
+        
+        // CORRECCIÓN: Buscar el premio por nombre o ID correctamente
+        const winningPrizeIndex = prizes.findIndex(p => 
+          p.name === result.spin.prize.name || p.id === result.spin.prize.id
+        );
         
         if (winningPrizeIndex !== -1) {
+          // CORRECCIÓN: Ajustar el cálculo del ángulo
           const prizeAngle = 360 / prizes.length;
-          const targetAngle = 360 - (winningPrizeIndex * prizeAngle);
+          // El ángulo del premio ganador (desde el top, en sentido horario)
+          const prizePosition = winningPrizeIndex * prizeAngle + (prizeAngle / 2);
+          // Calcular rotación necesaria (el pointer está arriba, en 0°)
+          const targetAngle = 360 - prizePosition;
+          // Agregar múltiples vueltas
           const spins = 5 + Math.random() * 3;
-          const finalRotation = rotation + (360 * spins) + targetAngle + (Math.random() * 10 - 5);
+          const finalRotation = rotation + (360 * spins) + targetAngle;
+          
+          console.log('Cálculo de rotación:', {
+            winningPrizeIndex,
+            prizeAngle,
+            prizePosition,
+            targetAngle,
+            finalRotation
+          });
           
           setRotation(finalRotation);
           
-          setTimeout(() => {
+          setTimeout(async () => {
             setWonPrize(result.spin.prize);
             setShowWinModal(true);
             playSound('win');
@@ -171,8 +198,12 @@ export function RouletteGame() {
               triggerConfetti();
             }
             setIsSpinning(false);
-            fetchUserStatus();
+            await fetchUserStatus();
           }, 4500);
+        } else {
+          console.error('Premio no encontrado en la lista');
+          setIsSpinning(false);
+          await fetchUserStatus();
         }
       } else {
         const error = await response.json();
@@ -187,23 +218,27 @@ export function RouletteGame() {
   };
 
   const handleValidateCode = async () => {
-    if (!promoCode) return;
+    if (!promoCode) {
+      toast.error('Por favor ingresa un código');
+      return;
+    }
     
     setIsValidatingCode(true);
     setCodeMessage(null);
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/validate-code`, {
+      const response = await fetch(`${API_URL}/roulette/validate-code`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ code: promoCode })
+        body: JSON.stringify({ code: promoCode.toUpperCase() })
       });
 
       const data = await response.json();
+      console.log('Respuesta de validación de código:', data);
       
       if (response.ok) {
         setCodeMessage({ 
@@ -212,9 +247,12 @@ export function RouletteGame() {
         });
         setPromoCode('');
         
-        // Actualizar el estado inmediatamente
         const newStatus = await fetchUserStatus();
-        console.log('Nuevo estado después del código:', newStatus);
+        console.log('Estado actualizado después del código:', newStatus);
+        
+        if (newStatus && newStatus.available_bonus_spins > 0) {
+          toast.success(`¡Tienes ${newStatus.available_bonus_spins} giro(s) bonus disponible(s)!`);
+        }
         
         setTimeout(() => setCodeMessage(null), 5000);
         
@@ -259,31 +297,76 @@ export function RouletteGame() {
 
   const prizeAngle = prizes.length > 0 ? 360 / prizes.length : 0;
   
-  // Cálculo correcto de giros disponibles
-  const hasSpinsAvailable = userStatus?.has_demo_available || 
-                           userStatus?.has_real_available || 
-                           (userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0);
+  const hasSpinsAvailable = !!(
+    userStatus?.has_demo_available || 
+    userStatus?.has_real_available || 
+    (userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0)
+  );
+
+  const totalAvailableSpins = 
+    (userStatus?.has_demo_available ? 1 : 0) +
+    (userStatus?.has_real_available ? 1 : 0) +
+    (userStatus?.available_bonus_spins || 0);
+
+  // Componente de patrón de cartas sutil
+  const CardPattern = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-5">
+      <div className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 40px,
+              rgba(255,255,255,0.02) 40px,
+              rgba(255,255,255,0.02) 80px
+            ),
+            repeating-linear-gradient(
+              -45deg,
+              transparent,
+              transparent 40px,
+              rgba(255,255,255,0.02) 40px,
+              rgba(255,255,255,0.02) 80px
+            )
+          `
+        }}
+      />
+      {/* Símbolos de cartas muy sutiles */}
+      <div className="absolute top-1/4 left-1/4 text-white/3 text-6xl rotate-12">♠</div>
+      <div className="absolute top-1/4 right-1/4 text-white/3 text-6xl -rotate-12">♥</div>
+      <div className="absolute bottom-1/4 left-1/4 text-white/3 text-6xl -rotate-12">♦</div>
+      <div className="absolute bottom-1/4 right-1/4 text-white/3 text-6xl rotate-12">♣</div>
+    </div>
+  );
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-pink-900/20 rounded-3xl pointer-events-none" />
-      
-      <div className="relative bg-gray-900/40 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-purple-500/20">
+      {/* Contenedor principal sin cambiar el fondo del header */}
+      <div className="relative bg-gray-900/40 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-gray-700/50">
+        <CardPattern />
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="relative z-10 flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl">
+            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl shadow-lg">
               <Trophy className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Ruleta de Premios</h2>
-              <p className="text-gray-400">Gira y gana recompensas increíbles</p>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                Ruleta de Premios 
+                <span className="text-yellow-400 text-xl">♠</span>
+              </h2>
+              <p className="text-gray-400">
+                {hasSpinsAvailable 
+                  ? `Tienes ${totalAvailableSpins} giro(s) disponible(s)` 
+                  : 'Sin giros disponibles - Usa un código promocional'}
+              </p>
             </div>
           </div>
           
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
           >
             {soundEnabled ? 
               <Volume2 className="w-5 h-5 text-gray-400" /> : 
@@ -293,79 +376,67 @@ export function RouletteGame() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-white overflow-hidden"
+            className="bg-blue-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-blue-500/30"
           >
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Gamepad2 className="w-6 h-6 opacity-80" />
-                {userStatus?.has_demo_available && (
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Disponible</span>
-                )}
-              </div>
-              <p className="text-sm opacity-90">Giro Demo</p>
-              <p className="text-2xl font-bold">{userStatus?.has_demo_available ? '1' : '0'}</p>
+            <div className="flex items-center justify-between mb-2">
+              <Gamepad2 className="w-6 h-6" />
+              {userStatus?.has_demo_available && (
+                <span className="text-xs bg-blue-500/30 px-2 py-1 rounded-full">Disponible</span>
+              )}
             </div>
+            <p className="text-sm opacity-90">Giro Demo</p>
+            <p className="text-2xl font-bold">{userStatus?.has_demo_available ? '1' : '0'}</p>
           </motion.div>
 
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 text-white overflow-hidden"
+            className="bg-green-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-green-500/30"
           >
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Star className="w-6 h-6 opacity-80" />
-                {userStatus?.has_real_available && (
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Disponible</span>
-                )}
-              </div>
-              <p className="text-sm opacity-90">Giro Real</p>
-              <p className="text-2xl font-bold">{userStatus?.has_real_available ? '1' : '0'}</p>
+            <div className="flex items-center justify-between mb-2">
+              <Star className="w-6 h-6" />
+              {userStatus?.has_real_available && (
+                <span className="text-xs bg-green-500/30 px-2 py-1 rounded-full">Disponible</span>
+              )}
             </div>
+            <p className="text-sm opacity-90">Giro Real</p>
+            <p className="text-2xl font-bold">{userStatus?.has_real_available ? '1' : '0'}</p>
           </motion.div>
 
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-4 text-white overflow-hidden"
+            className="bg-purple-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-purple-500/30"
           >
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <Gift className="w-6 h-6 opacity-80" />
-                {userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0 && (
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">x{userStatus.available_bonus_spins}</span>
-                )}
-              </div>
-              <p className="text-sm opacity-90">Giros Bonus</p>
-              <p className="text-2xl font-bold">{userStatus?.available_bonus_spins || 0}</p>
+            <div className="flex items-center justify-between mb-2">
+              <Gift className="w-6 h-6" />
+              {userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0 && (
+                <span className="text-xs bg-purple-500/30 px-2 py-1 rounded-full">x{userStatus.available_bonus_spins}</span>
+              )}
             </div>
+            <p className="text-sm opacity-90">Giros Bonus</p>
+            <p className="text-2xl font-bold">{userStatus?.available_bonus_spins || 0}</p>
           </motion.div>
 
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-4 text-white overflow-hidden"
+            className="bg-orange-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-orange-500/30"
           >
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-6 h-6 opacity-80" />
-              </div>
-              <p className="text-sm opacity-90">Total Giros</p>
-              <p className="text-2xl font-bold">{userStatus?.total_spins || 0}</p>
+            <div className="flex items-center justify-between mb-2">
+              <TrendingUp className="w-6 h-6" />
             </div>
+            <p className="text-sm opacity-90">Total Giros</p>
+            <p className="text-2xl font-bold">{userStatus?.total_spins || 0}</p>
           </motion.div>
         </div>
 
         {/* Código Promocional */}
-        <div className="mb-8">
+        <div className="relative z-10 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20"
+            className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50"
           >
             <div className="flex flex-col md:flex-row items-center gap-4">
               <div className="flex-1">
@@ -383,6 +454,7 @@ export function RouletteGame() {
                   type="text"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  onKeyPress={(e) => e.key === 'Enter' && handleValidateCode()}
                   placeholder="CÓDIGO-PROMO"
                   className="px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors flex-1 md:w-48"
                   disabled={isValidatingCode}
@@ -442,10 +514,7 @@ export function RouletteGame() {
         </div>
 
         {/* Ruleta */}
-        <div className="relative mb-8">
-          <div className="absolute -top-4 -left-4 w-24 h-24 bg-purple-500/20 rounded-full blur-xl" />
-          <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-pink-500/20 rounded-full blur-xl" />
-          
+        <div className="relative z-10 mb-6">
           {/* Pointer */}
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 z-20">
             <motion.div
@@ -462,17 +531,16 @@ export function RouletteGame() {
 
           {/* Wheel Container */}
           <div className="relative w-full max-w-lg mx-auto aspect-square p-4">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-1 animate-pulse">
+            {/* Borde exterior */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-1">
               <div className="w-full h-full rounded-full bg-gray-900" />
             </div>
-            
-            <div className="absolute inset-4 rounded-full bg-gradient-to-b from-transparent to-black/30 pointer-events-none z-10" />
             
             <motion.div
               className="absolute inset-4 rounded-full overflow-hidden shadow-2xl"
               style={{
                 transform: `rotate(${rotation}deg)`,
-                boxShadow: '0 0 50px rgba(147, 51, 234, 0.5)'
+                boxShadow: '0 0 30px rgba(147, 51, 234, 0.3), inset 0 0 30px rgba(0,0,0,0.5)'
               }}
               animate={{ rotate: rotation }}
               transition={{ 
@@ -496,23 +564,13 @@ export function RouletteGame() {
                   const textX = 50 + textRadius * Math.cos(textAngle);
                   const textY = 50 + textRadius * Math.sin(textAngle);
 
-                  const gradientId = `gradient-${index}`;
-
                   return (
                     <g key={prize.id}>
-                      <defs>
-                        <radialGradient id={gradientId}>
-                          <stop offset="0%" stopColor={prize.color} stopOpacity="1" />
-                          <stop offset="100%" stopColor={prize.color} stopOpacity="0.7" />
-                        </radialGradient>
-                      </defs>
-                      
                       <path
                         d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-                        fill={`url(#${gradientId})`}
-                        stroke="#1f2937"
-                        strokeWidth="0.3"
-                        className="hover:brightness-110 transition-all"
+                        fill={prize.color}
+                        stroke="#2a2a2a"
+                        strokeWidth="0.5"
                       />
                       
                       <foreignObject x={textX - 15} y={textY - 15} width="30" height="30">
@@ -564,46 +622,45 @@ export function RouletteGame() {
             </motion.div>
 
             {/* Spin Button */}
-            <motion.button
-              onClick={handleSpin}
-              disabled={isSpinning || !hasSpinsAvailable}
-              whileHover={!isSpinning && hasSpinsAvailable ? { scale: 1.1 } : {}}
-              whileTap={!isSpinning && hasSpinsAvailable ? { scale: 0.95 } : {}}
-              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 
-                w-28 h-28 rounded-full font-bold text-white transition-all ${
-                isSpinning || !hasSpinsAvailable
-                  ? 'bg-gray-700 cursor-not-allowed'
-                  : 'bg-gradient-to-br from-purple-600 via-pink-600 to-purple-600 hover:shadow-lg hover:shadow-purple-500/50'
-              }`}
-              style={{
-                boxShadow: !isSpinning && hasSpinsAvailable ? '0 0 30px rgba(168, 85, 247, 0.5)' : ''
-              }}
-            >
-              <div className="flex flex-col items-center justify-center">
-                {isSpinning ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
+              <motion.button
+                onClick={handleSpin}
+                disabled={isSpinning || !hasSpinsAvailable}
+                whileHover={!isSpinning && hasSpinsAvailable ? { scale: 1.1 } : {}}
+                whileTap={!isSpinning && hasSpinsAvailable ? { scale: 0.95 } : {}}
+                className={`w-28 h-28 rounded-full font-bold text-white transition-all ${
+                  isSpinning || !hasSpinsAvailable
+                    ? 'bg-gray-700 cursor-not-allowed'
+                    : 'bg-gradient-to-br from-purple-600 via-pink-600 to-purple-600 hover:shadow-lg hover:shadow-purple-500/50'
+                }`}
+                style={{
+                  boxShadow: !isSpinning && hasSpinsAvailable ? '0 0 20px rgba(168, 85, 247, 0.4)' : ''
+                }}
+              >
+                <div className="flex flex-col items-center justify-center">
+                  {isSpinning ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Zap className="w-8 h-8" />
+                    </motion.div>
+                  ) : !hasSpinsAvailable ? (
+                    <Lock className="w-8 h-8" />
+                  ) : (
                     <Zap className="w-8 h-8" />
-                  </motion.div>
-                ) : !hasSpinsAvailable ? (
-                  <Lock className="w-8 h-8" />
-                ) : (
-                  <Zap className="w-8 h-8" />
-                )}
-                <span className="text-sm mt-1 font-bold">
-                  {isSpinning ? 'GIRANDO' : !hasSpinsAvailable ? 'BLOQUEADO' : 'GIRAR'}
-                </span>
-                {hasSpinsAvailable && !isSpinning && (
-                  <span className="text-xs opacity-80">
-                    {userStatus?.has_demo_available && 'Demo'}
-                    {userStatus?.has_real_available && 'Real'}
-                    {userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0 && `Bonus (${userStatus.available_bonus_spins})`}
+                  )}
+                  <span className="text-sm mt-1 font-bold">
+                    {isSpinning ? 'GIRANDO' : !hasSpinsAvailable ? 'SIN GIROS' : 'GIRAR'}
                   </span>
-                )}
-              </div>
-            </motion.button>
+                  {hasSpinsAvailable && !isSpinning && (
+                    <span className="text-xs opacity-80">
+                      {totalAvailableSpins} disponible(s)
+                    </span>
+                  )}
+                </div>
+              </motion.button>
+            </div>
 
             {isSpinning && (
               <div className="absolute inset-0 rounded-full pointer-events-none">
@@ -618,7 +675,7 @@ export function RouletteGame() {
         </div>
 
         {/* Prize Table */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6">
+        <div className="relative z-10 bg-gray-800/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-5 h-5 text-yellow-400" />
             <h3 className="text-white font-semibold">Tabla de Premios</h3>
@@ -632,10 +689,10 @@ export function RouletteGame() {
               <motion.div
                 key={prize.id}
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-2 p-3 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all"
+                className="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all"
               >
                 <div
-                  className="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-white/20"
+                  className="w-4 h-4 rounded-full flex-shrink-0"
                   style={{ backgroundColor: prize.color }}
                 />
                 <div className="flex-1 min-w-0">

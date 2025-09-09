@@ -44,7 +44,7 @@ export function PrizesManager() {
       setLoading(true);
       const token = localStorage.getItem('token');
       // URL corregida: usar API_URL directamente sin duplicar /api
-      const response = await fetch(`${API_URL}/api/roulette/prizes`, {
+      const response = await fetch(`${API_URL}/roulette/prizes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -67,8 +67,8 @@ export function PrizesManager() {
       const token = localStorage.getItem('token');
       // URL corregida
       const url = prize.id 
-        ? `${API_URL}/api/roulette/prizes/${prize.id}`
-        : `${API_URL}/api/roulette/prizes`;
+        ? `${API_URL}/roulette/prizes/${prize.id}`
+        : `${API_URL}/roulette/prizes`;
       
       const response = await fetch(url, {
         method: prize.id ? 'PUT' : 'POST',
@@ -100,7 +100,7 @@ export function PrizesManager() {
     try {
       const token = localStorage.getItem('token');
       // URL corregida
-      const response = await fetch(`${API_URL}/api/roulette/prizes/${prizeId}`, {
+      const response = await fetch(`${API_URL}/roulette/prizes/${prizeId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -126,7 +126,7 @@ export function PrizesManager() {
       }));
 
       // URL corregida
-      const response = await fetch(`${API_URL}/api/roulette/prizes/adjust-probabilities`, {
+      const response = await fetch(`${API_URL}/roulette/prizes/adjust-probabilities`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

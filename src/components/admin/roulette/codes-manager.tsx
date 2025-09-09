@@ -43,7 +43,7 @@ export function CodesManager() {
       const token = localStorage.getItem('token');
       // URL CORREGIDA
       const response = await fetch(
-        `${API_URL}/api/roulette/codes?status=${filter}&page=${page}&limit=20`,
+        `${API_URL}/roulette/codes?status=${filter}&page=${page}&limit=20`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -68,7 +68,7 @@ export function CodesManager() {
     try {
       const token = localStorage.getItem('token');
       // URL CORREGIDA
-      const response = await fetch(`${API_URL}/api/roulette/codes`, {
+      const response = await fetch(`${API_URL}/roulette/codes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,7 +104,7 @@ export function CodesManager() {
     try {
       const token = localStorage.getItem('token');
       // URL CORREGIDA
-      const response = await fetch(`${API_URL}/api/roulette/codes/${codeId}`, {
+      const response = await fetch(`${API_URL}/roulette/codes/${codeId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -31,7 +31,7 @@ export function RouletteHistory() {
   const fetchHistory = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/roulette/my-history?limit=10`, {
+      const response = await fetch(`${API_URL}/roulette/my-history?limit=10`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
