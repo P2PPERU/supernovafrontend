@@ -31,6 +31,8 @@ export function ValidationManager() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
   useEffect(() => {
     fetchPendingValidations();
   }, []);
@@ -39,7 +41,7 @@ export function ValidationManager() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roulette/pending-validations`, {
+      const response = await fetch(`${API_URL}/roulette/pending-validations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -60,7 +62,7 @@ export function ValidationManager() {
   const validateUser = async (userId: string, notes?: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roulette/validate/${userId}`, {
+      const response = await fetch(`${API_URL}/roulette/validate/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -96,7 +98,7 @@ export function ValidationManager() {
       const token = localStorage.getItem('token');
       const userIds = Array.from(selectedUsers);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roulette/validate-batch`, {
+      const response = await fetch(`${API_URL}/roulette/validate-batch`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

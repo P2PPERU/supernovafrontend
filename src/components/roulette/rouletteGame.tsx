@@ -1,4 +1,3 @@
-// components/roulette/rouletteGame.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { 
   Gamepad2, Gift, Star, Zap, Trophy, Crown, 
   Sparkles, TrendingUp, Lock, Unlock, Volume2, VolumeX,
-  Ticket, CheckCircle, AlertCircle 
+  Ticket, CheckCircle, AlertCircle, RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -43,13 +42,14 @@ export function RouletteGame() {
   const [showWinModal, setShowWinModal] = useState(false);
   const [wonPrize, setWonPrize] = useState<Prize | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [continuousSpinning, setContinuousSpinning] = useState(false);
   
   // Estados para código promocional
   const [promoCode, setPromoCode] = useState('');
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [codeMessage, setCodeMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
   useEffect(() => {
     fetchPrizes();
@@ -58,6 +58,7 @@ export function RouletteGame() {
 
   const fetchPrizes = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/roulette/prizes`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -68,7 +69,17 @@ export function RouletteGame() {
         const activePrizes = (data.prizes || [])
           .filter((p: Prize) => p.is_active)
           .sort((a: Prize, b: Prize) => a.position - b.position);
+        
+        if (activePrizes.length === 0) {
+          toast.error('No hay premios configurados. Contacta al administrador.');
+          console.error('No hay premios activos');
+        } else {
+          console.log('✅ Premios cargados:', activePrizes.length, 'premios activos');
+        }
+        
         setPrizes(activePrizes);
+      } else {
+        toast.error('Error al cargar los premios');
       }
     } catch (error) {
       console.error('Error fetching prizes:', error);
@@ -103,8 +114,9 @@ export function RouletteGame() {
     return null;
   };
 
-  const playSound = (type: 'spin' | 'win') => {
+  const playSound = (type: 'spin' | 'win' | 'surprise') => {
     if (!soundEnabled) return;
+    // Aquí puedes agregar la lógica de sonido si lo deseas
   };
 
   const triggerConfetti = () => {
@@ -135,19 +147,34 @@ export function RouletteGame() {
     frame();
   };
 
+  // Función para cerrar el modal y detener el giro continuo
+  const handleCloseWinModal = () => {
+    setShowWinModal(false);
+    setContinuousSpinning(false);
+    
+    // Detener la ruleta en una posición aleatoria después de cerrar
+    setTimeout(() => {
+      const randomStop = Math.random() * 360;
+      setRotation(randomStop);
+      setWonPrize(null);
+      setIsSpinning(false);
+    }, 100);
+  };
+
   const handleSpin = async () => {
     if (isSpinning) return;
-    
-    const hasSpins = userStatus?.has_demo_available || 
-                    userStatus?.has_real_available || 
-                    (userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0);
-    
+
+    const hasSpins = userStatus?.has_demo_available ||
+      userStatus?.has_real_available ||
+      (userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0);
+
     if (!hasSpins) {
       toast.error('No tienes giros disponibles. Usa un código promocional para obtener más giros.');
       return;
     }
 
     setIsSpinning(true);
+    setContinuousSpinning(true);
     playSound('spin');
 
     try {
@@ -162,58 +189,70 @@ export function RouletteGame() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Resultado del giro:', result);
-        
-        // CORRECCIÓN: Buscar el premio por nombre o ID correctamente
-        const winningPrizeIndex = prizes.findIndex(p => 
-          p.name === result.spin.prize.name || p.id === result.spin.prize.id
-        );
-        
-        if (winningPrizeIndex !== -1) {
-          // CORRECCIÓN: Ajustar el cálculo del ángulo
-          const prizeAngle = 360 / prizes.length;
-          // El ángulo del premio ganador (desde el top, en sentido horario)
-          const prizePosition = winningPrizeIndex * prizeAngle + (prizeAngle / 2);
-          // Calcular rotación necesaria (el pointer está arriba, en 0°)
-          const targetAngle = 360 - prizePosition;
-          // Agregar múltiples vueltas
-          const spins = 5 + Math.random() * 3;
-          const finalRotation = rotation + (360 * spins) + targetAngle;
-          
-          console.log('Cálculo de rotación:', {
-            winningPrizeIndex,
-            prizeAngle,
-            prizePosition,
-            targetAngle,
-            finalRotation
-          });
-          
-          setRotation(finalRotation);
-          
-          setTimeout(async () => {
-            setWonPrize(result.spin.prize);
-            setShowWinModal(true);
-            playSound('win');
-            if (result.spin.prize.prize_value > 0) {
-              triggerConfetti();
-            }
-            setIsSpinning(false);
-            await fetchUserStatus();
-          }, 4500);
-        } else {
-          console.error('Premio no encontrado en la lista');
-          setIsSpinning(false);
-          await fetchUserStatus();
+
+        console.log('🎰 Resultado del backend:', {
+          prizeId: result.spin?.prize?.id,
+          prizeName: result.spin?.prize?.name,
+          prizePosition: result.spin?.prize?.position
+        });
+
+        // Búsqueda del premio por ID
+        let winningPrizeIndex = -1;
+        let prizeFound: Prize | null = null;
+
+        // Buscar por ID primero
+        if (result.spin?.prize?.id) {
+          winningPrizeIndex = prizes.findIndex(p =>
+            p.id === result.spin.prize.id ||
+            p.id.toString() === result.spin.prize.id.toString()
+          );
+
+          if (winningPrizeIndex !== -1) {
+            prizeFound = prizes[winningPrizeIndex];
+            console.log('✅ Premio encontrado por ID en índice:', winningPrizeIndex);
+          }
         }
+
+        // Fallback: buscar por nombre
+        if (winningPrizeIndex === -1 && result.spin?.prize?.name) {
+          winningPrizeIndex = prizes.findIndex(p =>
+            p.name.toLowerCase().trim() === result.spin.prize.name.toLowerCase().trim()
+          );
+
+          if (winningPrizeIndex !== -1) {
+            prizeFound = prizes[winningPrizeIndex];
+            console.log('✅ Premio encontrado por nombre en índice:', winningPrizeIndex);
+          }
+        }
+
+        // Usar el premio del backend directamente si no se encuentra
+        const finalPrize = prizeFound || result.spin.prize;
+
+        // Tiempo más corto para mostrar el premio (2.5 segundos de giro rápido)
+        setTimeout(async () => {
+          playSound('surprise');
+          setWonPrize(finalPrize);
+          setShowWinModal(true);
+          
+          if (finalPrize.prize_value > 0) {
+            triggerConfetti();
+          }
+          
+          playSound('win');
+          await fetchUserStatus();
+        }, 2500); // Reducido de 4500 a 2500ms
+
       } else {
         const error = await response.json();
         toast.error(error.message || 'Error al girar la ruleta');
         setIsSpinning(false);
+        setContinuousSpinning(false);
       }
     } catch (error) {
       console.error('Error spinning:', error);
       toast.error('Error de conexión');
       setIsSpinning(false);
+      setContinuousSpinning(false);
     }
   };
 
@@ -341,7 +380,7 @@ export function RouletteGame() {
 
   return (
     <div className="relative">
-      {/* Contenedor principal sin cambiar el fondo del header */}
+      {/* Contenedor principal */}
       <div className="relative bg-gray-900/40 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-gray-700/50">
         <CardPattern />
         
@@ -364,15 +403,31 @@ export function RouletteGame() {
             </div>
           </div>
           
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-          >
-            {soundEnabled ? 
-              <Volume2 className="w-5 h-5 text-gray-400" /> : 
-              <VolumeX className="w-5 h-5 text-gray-400" />
-            }
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+              title={soundEnabled ? "Desactivar sonido" : "Activar sonido"}
+            >
+              {soundEnabled ? 
+                <Volume2 className="w-5 h-5 text-gray-400" /> : 
+                <VolumeX className="w-5 h-5 text-gray-400" />
+              }
+            </button>
+            
+            <button
+              onClick={() => {
+                setLoading(true);
+                Promise.all([fetchPrizes(), fetchUserStatus()]).then(() => {
+                  toast.success('Datos actualizados');
+                });
+              }}
+              className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+              title="Recargar datos"
+            >
+              <RefreshCw className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -531,22 +586,49 @@ export function RouletteGame() {
 
           {/* Wheel Container */}
           <div className="relative w-full max-w-lg mx-auto aspect-square p-4">
-            {/* Borde exterior */}
+            {/* Borde exterior con efecto de velocidad */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-1">
               <div className="w-full h-full rounded-full bg-gray-900" />
             </div>
             
+            {/* Efecto de velocidad cuando gira */}
+            {continuousSpinning && (
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                animate={{
+                  boxShadow: [
+                    '0 0 20px rgba(147, 51, 234, 0.3)',
+                    '0 0 40px rgba(236, 72, 153, 0.5)',
+                    '0 0 60px rgba(251, 191, 36, 0.7)',
+                    '0 0 40px rgba(236, 72, 153, 0.5)',
+                    '0 0 20px rgba(147, 51, 234, 0.3)',
+                  ]
+                }}
+                transition={{
+                  duration: 0.5,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+            )}
+            
             <motion.div
               className="absolute inset-4 rounded-full overflow-hidden shadow-2xl"
               style={{
-                transform: `rotate(${rotation}deg)`,
-                boxShadow: '0 0 30px rgba(147, 51, 234, 0.3), inset 0 0 30px rgba(0,0,0,0.5)'
+                boxShadow: '0 0 30px rgba(147, 51, 234, 0.3), inset 0 0 30px rgba(0,0,0,0.5)',
+                filter: continuousSpinning ? 'blur(2px)' : 'none',
+                transform: `rotate(${rotation}deg)`, // Aplicar rotación directamente con style
               }}
-              animate={{ rotate: rotation }}
-              transition={{ 
-                duration: isSpinning ? 4.5 : 0, 
-                ease: [0.17, 0.67, 0.16, 0.99]
-              }}
+              animate={continuousSpinning ? { rotate: 360 } : {}}
+              transition={
+                continuousSpinning 
+                  ? { 
+                      duration: 0.5, // Giro muy rápido
+                      repeat: Infinity,
+                      ease: "linear"
+                    }
+                  : undefined // Sin transición cuando no está girando
+              }
             >
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 {prizes.map((prize, index) => {
@@ -651,7 +733,7 @@ export function RouletteGame() {
                     <Zap className="w-8 h-8" />
                   )}
                   <span className="text-sm mt-1 font-bold">
-                    {isSpinning ? 'GIRANDO' : !hasSpinsAvailable ? 'SIN GIROS' : 'GIRAR'}
+                    {isSpinning ? '¡GIRANDO!' : !hasSpinsAvailable ? 'SIN GIROS' : 'GIRAR'}
                   </span>
                   {hasSpinsAvailable && !isSpinning && (
                     <span className="text-xs opacity-80">
@@ -662,14 +744,31 @@ export function RouletteGame() {
               </motion.button>
             </div>
 
-            {isSpinning && (
-              <div className="absolute inset-0 rounded-full pointer-events-none">
-                <motion.div
-                  className="absolute inset-0 rounded-full border-4 border-transparent border-t-yellow-400"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-              </div>
+            {/* Efecto de partículas cuando gira rápido */}
+            {continuousSpinning && (
+              <>
+                <div className="absolute inset-0 rounded-full pointer-events-none">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-4 border-transparent border-t-yellow-400"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 0.3, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+                <div className="absolute inset-0 rounded-full pointer-events-none">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-transparent border-b-purple-400"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.4, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+                <div className="absolute inset-0 rounded-full pointer-events-none">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-transparent border-l-pink-400"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 0.2, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -721,8 +820,8 @@ export function RouletteGame() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
-              onClick={() => setShowWinModal(false)}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+              onClick={handleCloseWinModal}
             >
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
@@ -732,15 +831,27 @@ export function RouletteGame() {
                 className="relative bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900 rounded-3xl p-8 max-w-md w-full text-center border border-purple-500/50 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
+                {/* Efecto de brillo animado */}
                 <div className="absolute inset-0 rounded-3xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-purple-600/20 animate-pulse" />
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-purple-600/20"
+                    animate={{
+                      opacity: [0.2, 0.5]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut"
+                    }}
+                  />
                 </div>
                 
                 <div className="relative">
                   <motion.div
                     initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2 }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
                     className="text-7xl mb-4"
                   >
                     {wonPrize.prize_value > 100 ? '👑' : wonPrize.prize_value > 0 ? '🎉' : '🎁'}
@@ -752,7 +863,7 @@ export function RouletteGame() {
                     transition={{ delay: 0.3 }}
                     className="text-4xl font-bold text-white mb-2"
                   >
-                    ¡Felicidades!
+                    ¡INCREÍBLE!
                   </motion.h2>
                   
                   <motion.p
@@ -761,28 +872,43 @@ export function RouletteGame() {
                     transition={{ delay: 0.4 }}
                     className="text-xl text-gray-300 mb-6"
                   >
-                    Has ganado:
+                    ¡Has ganado!
                   </motion.p>
                   
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.5, type: "spring" }}
-                    className="inline-block px-8 py-4 rounded-2xl text-white font-bold text-2xl mb-4 shadow-lg"
+                    initial={{ scale: 0, rotate: 360 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+                    className="inline-block px-8 py-4 rounded-2xl text-white font-bold text-2xl mb-4 shadow-lg relative"
                     style={{ 
                       backgroundColor: wonPrize.color,
                       boxShadow: `0 0 30px ${wonPrize.color}50`
                     }}
                   >
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl"
+                      animate={{
+                        boxShadow: [
+                          `0 0 20px ${wonPrize.color}`,
+                          `0 0 40px ${wonPrize.color}`,
+                          `0 0 20px ${wonPrize.color}`
+                        ]
+                      }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
                     {wonPrize.name}
                   </motion.div>
                   
                   {wonPrize.prize_value > 0 && (
                     <motion.p
                       initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.6, type: "spring" }}
-                      className="text-3xl text-green-400 font-bold mb-4"
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ delay: 0.6, duration: 0.5, type: "spring" }}
+                      className="text-4xl text-green-400 font-bold mb-4"
                     >
                       ${wonPrize.prize_value}
                     </motion.p>
@@ -805,10 +931,10 @@ export function RouletteGame() {
                     transition={{ delay: 0.8 }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowWinModal(false)}
+                    onClick={handleCloseWinModal}
                     className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold transition-all shadow-lg"
                   >
-                    ¡Genial!
+                    ¡GENIAL!
                   </motion.button>
                 </div>
               </motion.div>
