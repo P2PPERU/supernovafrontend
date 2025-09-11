@@ -64,6 +64,110 @@ export interface News {
   updatedAt: string;
 }
 
+// Club Types
+export interface Club {
+  id: string;
+  name: string;
+  description: string;
+  shortDescription?: string;
+  logo?: string;
+  banner?: string;
+  website?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  features: string[];
+  gameTypes: string[];
+  location?: {
+    country: string;
+    city?: string;
+    address?: string;
+  };
+  requirements?: {
+    minAge: number;
+    verificationRequired: boolean;
+    minDeposit?: number;
+  };
+  schedule?: {
+    timeZone: string;
+    openHours: string;
+    tournamentDays: string[];
+  };
+  socialLinks?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    telegram?: string;
+    discord?: string;
+  };
+  stats?: {
+    totalMembers: number;
+    activePlayers: number;
+    totalTournaments: number;
+    avgPrizePool: number;
+  };
+  rating?: number;
+  totalReviews?: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tournament Types
+export interface Tournament {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'sit_and_go' | 'scheduled' | 'freeroll' | 'satellite';
+  gameType: 'texas_holdem' | 'omaha' | 'seven_card_stud' | 'mixed';
+  buyIn: number;
+  prizePool: number;
+  guaranteedPrizePool?: number;
+  maxPlayers: number;
+  currentPlayers: number;
+  status: 'upcoming' | 'registering' | 'running' | 'finished' | 'cancelled';
+  startTime: string;
+  endTime?: string;
+  registrationDeadline?: string;
+  structure: {
+    blindLevels: Array<{
+      level: number;
+      smallBlind: number;
+      bigBlind: number;
+      ante?: number;
+      duration: number; // en minutos
+    }>;
+    startingChips: number;
+    payoutStructure: Array<{
+      position: number;
+      percentage: number;
+    }>;
+  };
+  clubId?: string;
+  club?: Club;
+  createdBy: string;
+  creator?: User;
+  isActive: boolean;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tournament Registration Types
+export interface TournamentRegistration {
+  id: string;
+  tournamentId: string;
+  tournament?: Tournament;
+  playerId: string;
+  player?: User;
+  registeredAt: string;
+  status: 'registered' | 'checked_in' | 'playing' | 'eliminated' | 'finished';
+  finalPosition?: number;
+  prizeWon?: number;
+  eliminatedAt?: string;
+}
+
 // Ranking Types
 export interface Ranking {
   id: string;
@@ -133,6 +237,68 @@ export interface Bonus {
   updatedAt: string;
 }
 
+// Report Types
+export interface Report {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'daily' | 'weekly' | 'monthly' | 'custom';
+  category: 'users' | 'revenue' | 'tournaments' | 'clubs' | 'roulette' | 'general';
+  data: any; // JSON data del reporte
+  generatedBy: string;
+  generator?: User;
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
+  status: 'generating' | 'completed' | 'failed';
+  fileUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Settings Types
+export interface SystemSettings {
+  id: string;
+  category: 'general' | 'security' | 'email' | 'payment' | 'tournament' | 'roulette';
+  key: string;
+  value: any;
+  type: 'string' | 'number' | 'boolean' | 'json';
+  description?: string;
+  isPublic: boolean;
+  updatedBy: string;
+  updater?: User;
+  updatedAt: string;
+}
+
+// Activity Log Types
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  user?: User;
+  action: string;
+  entity: 'user' | 'club' | 'tournament' | 'news' | 'bonus' | 'roulette' | 'system';
+  entityId?: string;
+  details?: any; // JSON con detalles adicionales
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+// Notification Types
+export interface Notification {
+  id: string;
+  userId: string;
+  user?: User;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  data?: any; // JSON con datos adicionales
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
 // Common Types
 export interface PaginatedResponse<T> {
   data: T[];
@@ -147,4 +313,45 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+}
+
+// Dashboard Statistics Types
+export interface DashboardStats {
+  users: {
+    total: number;
+    active: number;
+    new: number;
+    change: number;
+    byRole: Array<{ role: string; count: number }>;
+    recentUsers: Array<{ id: string; username: string; createdAt: string; role: string }>;
+  };
+  clubs: {
+    total: number;
+    active: number;
+    featured: number;
+    totalMembers: number;
+    byCountry: Array<{ country: string; count: number }>;
+    topClubs: Array<{ id: string; name: string; members: number; rating: number }>;
+  };
+  tournaments: {
+    total: number;
+    active: number;
+    upcoming: number;
+    totalPrizePool: number;
+    totalParticipants: number;
+    byType: Array<{ type: string; count: number }>;
+  };
+  revenue: {
+    month: number;
+    today: number;
+    change: number;
+    lastMonth: number;
+    bySource: Array<{ source: string; amount: number }>;
+  };
+  system: {
+    totalNotifications: number;
+    unreadNotifications: number;
+    activeAlerts: number;
+    systemHealth: 'good' | 'warning' | 'critical';
+  };
 }

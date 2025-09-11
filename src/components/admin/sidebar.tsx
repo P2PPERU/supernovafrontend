@@ -16,7 +16,8 @@ import {
   FileText,
   ChevronRight,
   ChevronDown,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,14 +73,41 @@ const menuItems: MenuSection[] = [
         ],
       },
       {
+        title: 'Clubs',
+        href: '/admin/clubs',
+        icon: Building2,
+        subItems: [
+          { title: 'Todos los Clubs', href: '/admin/clubs' },
+          { title: 'Crear Club', href: '/admin/clubs/create' },
+          { title: 'Estadísticas', href: '/admin/clubs/stats' },
+        ],
+      },
+      {
         title: 'Bonificaciones',
         href: '/admin/bonuses',
         icon: Gift,
       },
+    ],
+  },
+  {
+    title: 'Juegos y Ruleta',
+    items: [
+      {
+        title: 'Ruleta',
+        href: '/admin/roulette',
+        icon: Gamepad2,
+        badge: { text: '5', variant: 'destructive' as const },
+        subItems: [
+          { title: 'Premios', href: '/admin/roulette' },
+          { title: 'Validaciones', href: '/admin/roulette?tab=validations' },
+          { title: 'Códigos', href: '/admin/roulette?tab=codes' },
+          { title: 'Estadísticas', href: '/admin/roulette?tab=stats' },
+        ],
+      },
       {
         title: 'Torneos',
         href: '/admin/tournaments',
-        icon: Gamepad2,
+        icon: Trophy,
         badge: { text: '2', variant: 'default' as const },
       },
     ],
@@ -90,7 +118,7 @@ const menuItems: MenuSection[] = [
       {
         title: 'Rankings',
         href: '/admin/rankings',
-        icon: Trophy,
+        icon: Shield,
       },
       {
         title: 'Reportes',

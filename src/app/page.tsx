@@ -1,6 +1,7 @@
 import { HeroSection } from '@/components/home/hero-section';
 import { FeaturesSection } from '@/components/home/features-section';
 import { FeaturedRooms } from '@/components/home/featured-rooms';
+import { ClubsCarousel } from '@/components/home/clubs-carousel';
 import { StatsSection } from '@/components/home/stats-section';
 import { PromoSection } from '@/components/home/promo-section';
 import { FeaturedNews } from '@/components/home/featured-news';
@@ -11,6 +12,7 @@ export default function HomePage() {
     <div className="overflow-hidden">
       <HeroSection />
       <FeaturedRooms />
+      <ClubsCarousel />
       <StatsSection />
       <FeaturesSection />
       <PromoSection />
