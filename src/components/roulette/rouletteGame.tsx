@@ -326,7 +326,7 @@ export function RouletteGame() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-20 h-20"
+          className="w-16 h-16 md:w-20 md:h-20"
         >
           <Sparkles className="w-full h-full text-purple-500" />
         </motion.div>
@@ -370,48 +370,48 @@ export function RouletteGame() {
           `
         }}
       />
-      {/* Símbolos de cartas muy sutiles */}
-      <div className="absolute top-1/4 left-1/4 text-white/3 text-6xl rotate-12">♠</div>
-      <div className="absolute top-1/4 right-1/4 text-white/3 text-6xl -rotate-12">♥</div>
-      <div className="absolute bottom-1/4 left-1/4 text-white/3 text-6xl -rotate-12">♦</div>
-      <div className="absolute bottom-1/4 right-1/4 text-white/3 text-6xl rotate-12">♣</div>
+      {/* Símbolos de cartas muy sutiles - responsive */}
+      <div className="absolute top-1/4 left-1/4 text-white/3 text-3xl md:text-6xl rotate-12">♠</div>
+      <div className="absolute top-1/4 right-1/4 text-white/3 text-3xl md:text-6xl -rotate-12">♥</div>
+      <div className="absolute bottom-1/4 left-1/4 text-white/3 text-3xl md:text-6xl -rotate-12">♦</div>
+      <div className="absolute bottom-1/4 right-1/4 text-white/3 text-3xl md:text-6xl rotate-12">♣</div>
     </div>
   );
 
   return (
     <div className="relative">
       {/* Contenedor principal */}
-      <div className="relative bg-gray-900/40 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-gray-700/50">
+      <div className="relative bg-gray-900/40 backdrop-blur-sm rounded-2xl md:rounded-3xl p-3 md:p-6 shadow-2xl border border-gray-700/50">
         <CardPattern />
         
-        {/* Header */}
-        <div className="relative z-10 flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl shadow-lg">
-              <Trophy className="w-8 h-8 text-white" />
+        {/* Header responsive */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3">
+          <div className="flex items-center gap-2 md:gap-3 flex-1">
+            <div className="p-2 md:p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg md:rounded-xl shadow-lg">
+              <Trophy className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <div className="flex-1">
+              <h2 className="text-lg md:text-2xl font-bold text-white flex items-center gap-2 flex-wrap">
                 Ruleta de Premios 
-                <span className="text-yellow-400 text-xl">♠</span>
+                <span className="text-yellow-400 text-base md:text-xl">♠</span>
               </h2>
-              <p className="text-gray-400">
+              <p className="text-xs md:text-sm text-gray-400 leading-tight">
                 {hasSpinsAvailable 
                   ? `Tienes ${totalAvailableSpins} giro(s) disponible(s)` 
-                  : 'Sin giros disponibles - Usa un código promocional'}
+                  : 'Sin giros disponibles'}
               </p>
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
               title={soundEnabled ? "Desactivar sonido" : "Activar sonido"}
             >
               {soundEnabled ? 
-                <Volume2 className="w-5 h-5 text-gray-400" /> : 
-                <VolumeX className="w-5 h-5 text-gray-400" />
+                <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-gray-400" /> : 
+                <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
               }
             </button>
             
@@ -425,101 +425,101 @@ export function RouletteGame() {
               className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
               title="Recargar datos"
             >
-              <RefreshCw className="w-5 h-5 text-gray-400" />
+              <RefreshCw className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
             </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* Stats Cards responsive */}
+        <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
           <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="bg-blue-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-blue-500/30"
+            whileHover={{ scale: 1.02 }}
+            className="bg-blue-600/20 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 text-white border border-blue-500/30"
           >
-            <div className="flex items-center justify-between mb-2">
-              <Gamepad2 className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <Gamepad2 className="w-4 h-4 md:w-6 md:h-6" />
               {userStatus?.has_demo_available && (
-                <span className="text-xs bg-blue-500/30 px-2 py-1 rounded-full">Disponible</span>
+                <span className="text-xs bg-blue-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full">Disponible</span>
               )}
             </div>
-            <p className="text-sm opacity-90">Giro Demo</p>
-            <p className="text-2xl font-bold">{userStatus?.has_demo_available ? '1' : '0'}</p>
+            <p className="text-xs md:text-sm opacity-90">Giro Demo</p>
+            <p className="text-lg md:text-2xl font-bold">{userStatus?.has_demo_available ? '1' : '0'}</p>
           </motion.div>
 
           <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="bg-green-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-green-500/30"
+            whileHover={{ scale: 1.02 }}
+            className="bg-green-600/20 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 text-white border border-green-500/30"
           >
-            <div className="flex items-center justify-between mb-2">
-              <Star className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <Star className="w-4 h-4 md:w-6 md:h-6" />
               {userStatus?.has_real_available && (
-                <span className="text-xs bg-green-500/30 px-2 py-1 rounded-full">Disponible</span>
+                <span className="text-xs bg-green-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full">Disponible</span>
               )}
             </div>
-            <p className="text-sm opacity-90">Giro Real</p>
-            <p className="text-2xl font-bold">{userStatus?.has_real_available ? '1' : '0'}</p>
+            <p className="text-xs md:text-sm opacity-90">Giro Real</p>
+            <p className="text-lg md:text-2xl font-bold">{userStatus?.has_real_available ? '1' : '0'}</p>
           </motion.div>
 
           <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="bg-purple-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-purple-500/30"
+            whileHover={{ scale: 1.02 }}
+            className="bg-purple-600/20 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 text-white border border-purple-500/30"
           >
-            <div className="flex items-center justify-between mb-2">
-              <Gift className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <Gift className="w-4 h-4 md:w-6 md:h-6" />
               {userStatus?.available_bonus_spins && userStatus.available_bonus_spins > 0 && (
-                <span className="text-xs bg-purple-500/30 px-2 py-1 rounded-full">x{userStatus.available_bonus_spins}</span>
+                <span className="text-xs bg-purple-500/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full">x{userStatus.available_bonus_spins}</span>
               )}
             </div>
-            <p className="text-sm opacity-90">Giros Bonus</p>
-            <p className="text-2xl font-bold">{userStatus?.available_bonus_spins || 0}</p>
+            <p className="text-xs md:text-sm opacity-90">Giros Bonus</p>
+            <p className="text-lg md:text-2xl font-bold">{userStatus?.available_bonus_spins || 0}</p>
           </motion.div>
 
           <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="bg-orange-600/20 backdrop-blur-sm rounded-xl p-4 text-white border border-orange-500/30"
+            whileHover={{ scale: 1.02 }}
+            className="bg-orange-600/20 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 text-white border border-orange-500/30"
           >
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <TrendingUp className="w-4 h-4 md:w-6 md:h-6" />
             </div>
-            <p className="text-sm opacity-90">Total Giros</p>
-            <p className="text-2xl font-bold">{userStatus?.total_spins || 0}</p>
+            <p className="text-xs md:text-sm opacity-90">Total Giros</p>
+            <p className="text-lg md:text-2xl font-bold">{userStatus?.total_spins || 0}</p>
           </motion.div>
         </div>
 
-        {/* Código Promocional */}
-        <div className="relative z-10 mb-6">
+        {/* Código Promocional responsive */}
+        <div className="relative z-10 mb-4 md:mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50"
+            className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-gray-700/50"
           >
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-purple-400" />
+            <div className="flex flex-col gap-4">
+              <div>
+                <h3 className="text-base md:text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                  <Ticket className="w-4 h-4 md:w-5 md:h-5 text-purple-400" />
                   ¿Tienes un código promocional?
                 </h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-xs md:text-sm text-gray-400">
                   Ingresa tu código para obtener giros adicionales
                 </p>
               </div>
               
-              <div className="flex gap-3 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   onKeyPress={(e) => e.key === 'Enter' && handleValidateCode()}
                   placeholder="CÓDIGO-PROMO"
-                  className="px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors flex-1 md:w-48"
+                  className="px-4 py-2.5 md:py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors flex-1 text-sm md:text-base"
                   disabled={isValidatingCode}
                 />
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleValidateCode}
                   disabled={!promoCode || isValidatingCode}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                  className={`px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-sm md:text-base min-w-[120px] ${
                     !promoCode || isValidatingCode
                       ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg'
@@ -532,7 +532,7 @@ export function RouletteGame() {
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
                       />
-                      Validando...
+                      <span className="hidden sm:inline">Validando...</span>
                     </>
                   ) : (
                     <>
@@ -550,44 +550,46 @@ export function RouletteGame() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
+                  className={`mt-4 p-3 rounded-lg flex items-start gap-2 ${
                     codeMessage.type === 'success' 
                       ? 'bg-green-500/20 border border-green-500/50 text-green-400'
                       : 'bg-red-500/20 border border-red-500/50 text-red-400'
                   }`}
                 >
-                  {codeMessage.type === 'success' ? (
-                    <CheckCircle className="w-5 h-5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5" />
-                  )}
-                  <span className="text-sm font-medium">{codeMessage.text}</span>
+                  <div className="flex-shrink-0">
+                    {codeMessage.type === 'success' ? (
+                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
+                    )}
+                  </div>
+                  <span className="text-xs md:text-sm font-medium leading-tight">{codeMessage.text}</span>
                 </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
         </div>
 
-        {/* Ruleta */}
-        <div className="relative z-10 mb-6">
-          {/* Pointer */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 z-20">
+        {/* Ruleta responsive */}
+        <div className="relative z-10 mb-4 md:mb-6">
+          {/* Pointer responsive */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 md:-translate-y-4 z-20">
             <motion.div
               animate={isSpinning ? { scale: [1, 1.2, 1] } : {}}
               transition={{ duration: 0.5, repeat: isSpinning ? Infinity : 0 }}
               className="relative"
             >
-              <div className="w-0 h-0 border-l-[30px] border-l-transparent border-r-[30px] border-r-transparent border-b-[60px] border-b-yellow-400 drop-shadow-lg" />
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-                <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
+              <div className="w-0 h-0 border-l-[20px] md:border-l-[30px] border-l-transparent border-r-[20px] md:border-r-[30px] border-r-transparent border-b-[40px] md:border-b-[60px] border-b-yellow-400 drop-shadow-lg" />
+              <div className="absolute top-5 md:top-8 left-1/2 transform -translate-x-1/2">
+                <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-yellow-300 animate-pulse" />
               </div>
             </motion.div>
           </div>
 
-          {/* Wheel Container */}
-          <div className="relative w-full max-w-lg mx-auto aspect-square p-4">
+          {/* Wheel Container responsive */}
+          <div className="relative w-full max-w-sm md:max-w-lg mx-auto aspect-square p-2 md:p-4">
             {/* Borde exterior con efecto de velocidad */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-1">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-0.5 md:p-1">
               <div className="w-full h-full rounded-full bg-gray-900" />
             </div>
             
@@ -613,21 +615,21 @@ export function RouletteGame() {
             )}
             
             <motion.div
-              className="absolute inset-4 rounded-full overflow-hidden shadow-2xl"
+              className="absolute inset-2 md:inset-4 rounded-full overflow-hidden shadow-2xl"
               style={{
                 boxShadow: '0 0 30px rgba(147, 51, 234, 0.3), inset 0 0 30px rgba(0,0,0,0.5)',
-                filter: continuousSpinning ? 'blur(2px)' : 'none',
-                transform: `rotate(${rotation}deg)`, // Aplicar rotación directamente con style
+                filter: continuousSpinning ? 'blur(1px) md:blur(2px)' : 'none',
+                transform: `rotate(${rotation}deg)`,
               }}
               animate={continuousSpinning ? { rotate: 360 } : {}}
               transition={
                 continuousSpinning 
                   ? { 
-                      duration: 0.5, // Giro muy rápido
+                      duration: 0.5,
                       repeat: Infinity,
                       ease: "linear"
                     }
-                  : undefined // Sin transición cuando no está girando
+                  : undefined
               }
             >
               <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -658,11 +660,11 @@ export function RouletteGame() {
                       <foreignObject x={textX - 15} y={textY - 15} width="30" height="30">
                         <div className="flex items-center justify-center w-full h-full">
                           {prize.prize_value > 100 ? (
-                            <Crown className="w-5 h-5 text-yellow-300 drop-shadow-lg" />
+                            <Crown className="w-3 h-3 md:w-5 md:h-5 text-yellow-300 drop-shadow-lg" />
                           ) : prize.prize_value > 0 ? (
-                            <Star className="w-4 h-4 text-white drop-shadow-lg" />
+                            <Star className="w-3 h-3 md:w-4 md:h-4 text-white drop-shadow-lg" />
                           ) : (
-                            <Gift className="w-4 h-4 text-white/70 drop-shadow-lg" />
+                            <Gift className="w-3 h-3 md:w-4 md:h-4 text-white/70 drop-shadow-lg" />
                           )}
                         </div>
                       </foreignObject>
@@ -671,7 +673,7 @@ export function RouletteGame() {
                         x={textX}
                         y={textY + 10}
                         fill="white"
-                        fontSize="2.5"
+                        fontSize="2"
                         fontWeight="bold"
                         textAnchor="middle"
                         className="drop-shadow-lg select-none"
@@ -681,7 +683,7 @@ export function RouletteGame() {
                           strokeWidth: '0.5px'
                         }}
                       >
-                        {prize.name.length > 10 ? prize.name.substring(0, 10) + '...' : prize.name}
+                        {prize.name.length > 8 ? prize.name.substring(0, 8) + '...' : prize.name}
                       </text>
                     </g>
                   );
@@ -698,19 +700,19 @@ export function RouletteGame() {
                   </filter>
                 </defs>
                 
-                <circle cx="50" cy="50" r="15" fill="url(#centerGradient)" filter="url(#centerShadow)" />
-                <circle cx="50" cy="50" r="12" fill="none" stroke="#fbbf24" strokeWidth="0.5" opacity="0.5" />
+                <circle cx="50" cy="50" r="12" fill="url(#centerGradient)" filter="url(#centerShadow)" />
+                <circle cx="50" cy="50" r="10" fill="none" stroke="#fbbf24" strokeWidth="0.5" opacity="0.5" />
               </svg>
             </motion.div>
 
-            {/* Spin Button */}
+            {/* Spin Button responsive */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
               <motion.button
                 onClick={handleSpin}
                 disabled={isSpinning || !hasSpinsAvailable}
-                whileHover={!isSpinning && hasSpinsAvailable ? { scale: 1.1 } : {}}
+                whileHover={!isSpinning && hasSpinsAvailable ? { scale: 1.05 } : {}}
                 whileTap={!isSpinning && hasSpinsAvailable ? { scale: 0.95 } : {}}
-                className={`w-28 h-28 rounded-full font-bold text-white transition-all ${
+                className={`w-20 h-20 md:w-28 md:h-28 rounded-full font-bold text-white transition-all ${
                   isSpinning || !hasSpinsAvailable
                     ? 'bg-gray-700 cursor-not-allowed'
                     : 'bg-gradient-to-br from-purple-600 via-pink-600 to-purple-600 hover:shadow-lg hover:shadow-purple-500/50'
@@ -725,19 +727,19 @@ export function RouletteGame() {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     >
-                      <Zap className="w-8 h-8" />
+                      <Zap className="w-5 h-5 md:w-8 md:h-8" />
                     </motion.div>
                   ) : !hasSpinsAvailable ? (
-                    <Lock className="w-8 h-8" />
+                    <Lock className="w-5 h-5 md:w-8 md:h-8" />
                   ) : (
-                    <Zap className="w-8 h-8" />
+                    <Zap className="w-5 h-5 md:w-8 md:h-8" />
                   )}
-                  <span className="text-sm mt-1 font-bold">
-                    {isSpinning ? '¡GIRANDO!' : !hasSpinsAvailable ? 'SIN GIROS' : 'GIRAR'}
+                  <span className="text-xs md:text-sm mt-1 font-bold leading-tight">
+                    {isSpinning ? 'GIRANDO' : !hasSpinsAvailable ? 'SIN GIROS' : 'GIRAR'}
                   </span>
                   {hasSpinsAvailable && !isSpinning && (
-                    <span className="text-xs opacity-80">
-                      {totalAvailableSpins} disponible(s)
+                    <span className="text-[10px] md:text-xs opacity-80 leading-none">
+                      {totalAvailableSpins} disp.
                     </span>
                   )}
                 </div>
@@ -749,21 +751,21 @@ export function RouletteGame() {
               <>
                 <div className="absolute inset-0 rounded-full pointer-events-none">
                   <motion.div
-                    className="absolute inset-0 rounded-full border-4 border-transparent border-t-yellow-400"
+                    className="absolute inset-0 rounded-full border-2 md:border-4 border-transparent border-t-yellow-400"
                     animate={{ rotate: -360 }}
                     transition={{ duration: 0.3, repeat: Infinity, ease: "linear" }}
                   />
                 </div>
                 <div className="absolute inset-0 rounded-full pointer-events-none">
                   <motion.div
-                    className="absolute inset-0 rounded-full border-2 border-transparent border-b-purple-400"
+                    className="absolute inset-0 rounded-full border border-2 border-transparent border-b-purple-400"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.4, repeat: Infinity, ease: "linear" }}
                   />
                 </div>
                 <div className="absolute inset-0 rounded-full pointer-events-none">
                   <motion.div
-                    className="absolute inset-0 rounded-full border-2 border-transparent border-l-pink-400"
+                    className="absolute inset-0 rounded-full border border-2 border-transparent border-l-pink-400"
                     animate={{ rotate: -360 }}
                     transition={{ duration: 0.2, repeat: Infinity, ease: "linear" }}
                   />
@@ -773,29 +775,29 @@ export function RouletteGame() {
           </div>
         </div>
 
-        {/* Prize Table */}
-        <div className="relative z-10 bg-gray-800/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            <h3 className="text-white font-semibold">Tabla de Premios</h3>
+        {/* Prize Table responsive */}
+        <div className="relative z-10 bg-gray-800/30 backdrop-blur-sm rounded-xl p-4 md:p-5 border border-gray-700/50">
+          <div className="flex items-center gap-2 mb-3 md:mb-4">
+            <Trophy className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" />
+            <h3 className="text-white font-semibold text-sm md:text-base">Tabla de Premios</h3>
             <span className="ml-auto text-xs text-gray-400">
-              {prizes.length} premios disponibles
+              {prizes.length} premios
             </span>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 md:max-h-64 overflow-y-auto custom-scrollbar">
             {prizes.map((prize) => (
               <motion.div
                 key={prize.id}
-                whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all"
+                whileHover={{ scale: 1.02 }}
+                className="flex items-center gap-2 p-2 md:p-3 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-all"
               >
                 <div
-                  className="w-4 h-4 rounded-full flex-shrink-0"
+                  className="w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0"
                   style={{ backgroundColor: prize.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white font-medium truncate">{prize.name}</p>
+                  <p className="text-xs md:text-sm text-white font-medium truncate">{prize.name}</p>
                   <div className="flex items-center gap-2 mt-1">
                     {prize.prize_value > 0 && (
                       <span className="text-xs text-green-400 font-bold">${prize.prize_value}</span>
@@ -806,14 +808,14 @@ export function RouletteGame() {
                   </div>
                 </div>
                 {prize.prize_value > 100 && (
-                  <Crown className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                  <Crown className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 flex-shrink-0" />
                 )}
               </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Win Modal */}
+        {/* Win Modal responsive */}
         <AnimatePresence>
           {showWinModal && wonPrize && (
             <motion.div
@@ -828,11 +830,11 @@ export function RouletteGame() {
                 animate={{ scale: 1, rotate: 0 }}
                 exit={{ scale: 0, rotate: 180 }}
                 transition={{ type: "spring", duration: 0.5 }}
-                className="relative bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900 rounded-3xl p-8 max-w-md w-full text-center border border-purple-500/50 shadow-2xl"
+                className="relative bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900 rounded-2xl md:rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full text-center border border-purple-500/50 shadow-2xl mx-4"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Efecto de brillo animado */}
-                <div className="absolute inset-0 rounded-3xl overflow-hidden">
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden">
                   <motion.div 
                     className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-purple-600/20"
                     animate={{
@@ -852,7 +854,7 @@ export function RouletteGame() {
                     initial={{ scale: 0 }}
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ delay: 0.2, duration: 0.5 }}
-                    className="text-7xl mb-4"
+                    className="text-5xl md:text-7xl mb-3 md:mb-4"
                   >
                     {wonPrize.prize_value > 100 ? '👑' : wonPrize.prize_value > 0 ? '🎉' : '🎁'}
                   </motion.div>
@@ -861,7 +863,7 @@ export function RouletteGame() {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-4xl font-bold text-white mb-2"
+                    className="text-2xl md:text-4xl font-bold text-white mb-2"
                   >
                     ¡INCREÍBLE!
                   </motion.h2>
@@ -870,7 +872,7 @@ export function RouletteGame() {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="text-xl text-gray-300 mb-6"
+                    className="text-lg md:text-xl text-gray-300 mb-4 md:mb-6"
                   >
                     ¡Has ganado!
                   </motion.p>
@@ -879,14 +881,14 @@ export function RouletteGame() {
                     initial={{ scale: 0, rotate: 360 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-                    className="inline-block px-8 py-4 rounded-2xl text-white font-bold text-2xl mb-4 shadow-lg relative"
+                    className="inline-block px-4 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl text-white font-bold text-lg md:text-2xl mb-3 md:mb-4 shadow-lg relative"
                     style={{ 
                       backgroundColor: wonPrize.color,
                       boxShadow: `0 0 30px ${wonPrize.color}50`
                     }}
                   >
                     <motion.div
-                      className="absolute inset-0 rounded-2xl"
+                      className="absolute inset-0 rounded-xl md:rounded-2xl"
                       animate={{
                         boxShadow: [
                           `0 0 20px ${wonPrize.color}`,
@@ -900,15 +902,15 @@ export function RouletteGame() {
                         ease: "easeInOut"
                       }}
                     />
-                    {wonPrize.name}
+                    <span className="text-sm md:text-2xl">{wonPrize.name}</span>
                   </motion.div>
                   
                   {wonPrize.prize_value > 0 && (
                     <motion.p
                       initial={{ scale: 0 }}
-                      animate={{ scale: [1, 1.3, 1] }}
+                      animate={{ scale: 1 }}
                       transition={{ delay: 0.6, duration: 0.5, type: "spring" }}
-                      className="text-4xl text-green-400 font-bold mb-4"
+                      className="text-2xl md:text-4xl text-green-400 font-bold mb-3 md:mb-4"
                     >
                       ${wonPrize.prize_value}
                     </motion.p>
@@ -919,7 +921,7 @@ export function RouletteGame() {
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.7 }}
-                      className="text-gray-400 mb-6"
+                      className="text-gray-400 mb-4 md:mb-6 text-sm md:text-base"
                     >
                       {wonPrize.description}
                     </motion.p>
@@ -932,7 +934,7 @@ export function RouletteGame() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleCloseWinModal}
-                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold transition-all shadow-lg"
+                    className="px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg md:rounded-xl font-semibold transition-all shadow-lg text-sm md:text-base"
                   >
                     ¡GENIAL!
                   </motion.button>

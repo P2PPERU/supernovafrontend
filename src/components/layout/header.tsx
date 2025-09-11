@@ -42,56 +42,6 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Inyectar estilos CSS para animaciones
-  useEffect(() => {
-    const styleElement = document.createElement('style');
-    styleElement.innerHTML = `
-      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-      
-      @keyframes shine {
-        0% { 
-          transform: translateX(-150%);
-          opacity: 0;
-        }
-        50% {
-          opacity: 1;
-        }
-        100% { 
-          transform: translateX(150%);
-          opacity: 0;
-        }
-      }
-      
-      .logo-container {
-        position: relative;
-        overflow: hidden;
-      }
-      
-      .shine-effect {
-        position: absolute;
-        top: -50%;
-        left: -150%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(
-          105deg,
-          transparent 20%,
-          rgba(255, 255, 255, 0.1) 25%,
-          rgba(255, 255, 255, 0.5) 50%,
-          rgba(255, 255, 255, 0.1) 75%,
-          transparent 80%
-        );
-        animation: shine 4s ease-in-out infinite;
-        pointer-events: none;
-      }
-    `;
-    document.head.appendChild(styleElement);
-    return () => {
-      document.head.removeChild(styleElement);
-    };
-  }, []);
-
   return (
     <motion.header
       initial={{ y: -100 }}
@@ -106,7 +56,7 @@ export function Header() {
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-24 items-center justify-between">
-          {/* Logo SUPERNOVA sin efecto 3D pero con brillo mejorado */}
+          {/* Logo SUPERNOVA con tipografía original pero sin brillo */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Efecto glow detrás del logo */}
@@ -122,10 +72,10 @@ export function Header() {
               </div>
             </div>
             
-            {/* Texto SUPERNOVA sin efecto 3D pero con brillo mejorado */}
+            {/* Texto SUPERNOVA con tipografía original pero sin efectos de brillo */}
             <div className="hidden sm:flex flex-col">
-              <div className="logo-container relative">
-                {/* Texto principal sin efecto 3D */}
+              <div className="relative">
+                {/* Texto principal con tipografía original */}
                 <h1 
                   className="text-3xl lg:text-4xl xl:text-5xl leading-none font-black tracking-wider relative z-10"
                   style={{
@@ -143,13 +93,10 @@ export function Header() {
                 >
                   SUPERNOVA
                 </h1>
-                
-                {/* Efecto de brillo que recorre todo el texto */}
-                <div className="shine-effect" />
               </div>
               
               {/* Subtítulo POKER UNION */}
-              <div className="logo-container relative">
+              <div className="relative">
                 <span 
                   className="text-xs lg:text-sm mt-1 font-bold tracking-[0.3em] relative z-10"
                   style={{
@@ -164,8 +111,6 @@ export function Header() {
                 >
                   POKER UNION
                 </span>
-                {/* Efecto de brillo para el subtítulo */}
-                <div className="shine-effect" style={{ animationDelay: '0.5s' }} />
               </div>
             </div>
           </Link>
@@ -305,7 +250,7 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] glass border-white/10">
-                {/* Logo en mobile sin efecto 3D */}
+                {/* Logo en mobile con tipografía original pero sin efectos de brillo */}
                 <div className="flex items-center space-x-3 mb-8">
                   <img 
                     src="/images/supernova-logo.png" 
@@ -313,51 +258,36 @@ export function Header() {
                     className="h-14 w-14 object-contain filter drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"
                   />
                   <div>
-                    <div className="logo-container relative">
+                    <div className="relative">
                       <h2 
-                        className="text-2xl font-black logo-text"
+                        className="text-2xl font-black"
                         style={{
                           fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
                           fontWeight: 900,
                           fontStyle: 'italic',
                           textTransform: 'uppercase',
-                        }}
-                      >
-                        SUPERNOVA
-                      </h2>
-                      <h2 
-                        className="text-2xl font-black shine-clip absolute top-0 left-0"
-                        style={{
-                          fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
-                          fontWeight: 900,
-                          fontStyle: 'italic',
-                          textTransform: 'uppercase',
+                          background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #e0e0e0 75%, #ffffff 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 20px rgba(255,255,255,0.5))',
+                          textShadow: '0 0 30px rgba(255,255,255,0.3)',
                         }}
                       >
                         SUPERNOVA
                       </h2>
                     </div>
-                    <div className="logo-container relative">
+                    <div className="relative">
                       <div 
-                        className="text-xs font-bold tracking-[0.3em] logo-text"
+                        className="text-xs font-bold tracking-[0.3em]"
                         style={{
                           fontFamily: "'Orbitron', sans-serif",
                           textTransform: 'uppercase',
-                          color: 'rgba(16, 185, 129, 0.3)',
-                        }}
-                      >
-                        POKER UNION
-                      </div>
-                      <div 
-                        className="text-xs font-bold tracking-[0.3em] shine-clip absolute top-0 left-0"
-                        style={{
-                          fontFamily: "'Orbitron', sans-serif",
-                          textTransform: 'uppercase',
-                          background: 'linear-gradient(90deg, transparent 0%, #10b981 40%, #22d3ee 50%, #10b981 60%, transparent 100%)',
+                          background: 'linear-gradient(90deg, #10b981 0%, #22d3ee 50%, #10b981 100%)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
                           backgroundClip: 'text',
-                          animationDelay: '0.5s',
+                          filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.5))',
                         }}
                       >
                         POKER UNION

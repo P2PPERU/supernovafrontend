@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users,
   Gift,
@@ -16,12 +17,28 @@ import {
   ArrowDown,
   ArrowRight,
   Dices,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  Newspaper,
+  Trophy,
+  BarChart3,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  UserCheck,
+  Zap,
+  Target,
+  Sparkles,
+  TrendingDown,
+  Calendar,
+  CreditCard,
+  Star
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   LineChart,
   Line,
@@ -34,26 +51,43 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  BarChart,
+  Bar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend
 } from 'recharts';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Interfaces...
+// Interfaces
 interface DashboardStats {
   users: {
     total: number;
     active: number;
     new: number;
     change: number;
+    byRole: Array<{ role: string; count: number }>;
+    recentUsers: Array<{ id: string; username: string; createdAt: string; role: string }>;
   };
   revenue: {
     month: number;
     today: number;
     change: number;
+    lastMonth: number;
   };
   tournaments: {
     active: number;
     pending: number;
     participants: number;
+    totalPrizePool: number;
   };
   bonus: {
     active: number;
@@ -69,24 +103,45 @@ interface DashboardStats {
     activeUsers: number;
     topPrize: string;
     conversionRate: number;
+    totalPrizes: number;
+    biggestWin: number;
+  };
+  news: {
+    total: number;
+    published: number;
+    draft: number;
+    totalViews: number;
+  };
+  rankings: {
+    totalPlayers: number;
+    activeThisWeek: number;
+    topPlayer: string;
   };
 }
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
+const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899'];
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [userStats, setUserStats] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [activityData, setActivityData] = useState<any[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('week');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchAllData();
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(() => {
+      fetchAllData(true);
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchAllData = async () => {
-    setLoading(true);
+  const fetchAllData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -99,113 +154,148 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json'
       };
 
-      // Usar el puerto correcto del backend (3000)
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-      // Fetch de endpoints reales
-      const [usersResponse] = await Promise.all([
-        fetch(`${API_URL}/api/users`, { headers })
+      // Fetch todos los endpoints en paralelo
+      const [
+        usersResponse,
+        bonusResponse,
+        rouletteStatsResponse,
+        newsStatsResponse,
+        rankingsResponse
+      ] = await Promise.allSettled([
+        fetch(`${API_URL}/api/users/stats`, { headers }),
+        fetch(`${API_URL}/api/bonus/stats`, { headers }),
+        fetch(`${API_URL}/api/roulette/stats`, { headers }),
+        fetch(`${API_URL}/api/news/stats/overview`, { headers }),
+        fetch(`${API_URL}/api/rankings/stats`, { headers })
       ]);
 
-      const users = await usersResponse.json();
+      // Procesar respuestas de forma segura
+      const usersData = usersResponse.status === 'fulfilled' && usersResponse.value.ok 
+        ? await usersResponse.value.json() 
+        : null;
+      const bonusData = bonusResponse.status === 'fulfilled' && bonusResponse.value.ok 
+        ? await bonusResponse.value.json() 
+        : null;
+      const rouletteData = rouletteStatsResponse.status === 'fulfilled' && rouletteStatsResponse.value.ok 
+        ? await rouletteStatsResponse.value.json() 
+        : null;
+      const newsData = newsStatsResponse.status === 'fulfilled' && newsStatsResponse.value.ok 
+        ? await newsStatsResponse.value.json() 
+        : null;
+      const rankingsData = rankingsResponse.status === 'fulfilled' && rankingsResponse.value.ok 
+        ? await rankingsResponse.value.json() 
+        : null;
 
-      // Por ahora usar datos mock para los endpoints que no existen
+      // Consolidar estadísticas
       const consolidatedStats: DashboardStats = {
         users: {
-          total: users.total || users.users?.length || 10234,
-          active: Math.floor((users.total || users.users?.length || 10234) * 0.7),
-          new: 234,
-          change: 12.5
+          total: usersData?.stats?.totalUsers || 0,
+          active: usersData?.stats?.activeUsers || 0,
+          new: usersData?.stats?.recentUsers?.length || 0,
+          change: calculateChange(usersData?.stats?.totalUsers, usersData?.stats?.lastMonthUsers),
+          byRole: usersData?.stats?.byRole || [],
+          recentUsers: usersData?.stats?.recentUsers || []
         },
         revenue: {
-          month: 45678,
-          today: 3250,
-          change: 23.1
+          month: calculateMonthlyRevenue(rouletteData, bonusData),
+          today: rouletteData?.stats?.todayRevenue || 0,
+          change: 23.1,
+          lastMonth: 0
         },
         tournaments: {
           active: 12,
           pending: 5,
-          participants: 234
+          participants: 234,
+          totalPrizePool: 45000
         },
         bonus: {
-          active: 156,
-          claimed: 45,
-          pending: 12,
-          expired: 3,
-          totalValue: 2450
+          active: bonusData?.stats?.active || 0,
+          claimed: bonusData?.stats?.claimed || 0,
+          pending: bonusData?.stats?.pending || 0,
+          expired: bonusData?.stats?.expired || 0,
+          totalValue: bonusData?.stats?.totalValue || 0
         },
         roulette: {
-          todaySpins: 145,
-          pendingValidations: 8,
-          todayRevenue: 3250,
-          activeUsers: 42,
-          topPrize: '$500 Bonus',
-          conversionRate: 0.35
+          todaySpins: rouletteData?.stats?.todaySpins || 0,
+          pendingValidations: rouletteData?.stats?.pendingValidations || 0,
+          todayRevenue: rouletteData?.stats?.todayRevenue || 0,
+          activeUsers: rouletteData?.stats?.activeUsers || 0,
+          topPrize: rouletteData?.stats?.topPrize || 'S/ 500',
+          conversionRate: rouletteData?.stats?.conversionRate || 0.35,
+          totalPrizes: rouletteData?.stats?.totalPrizes || 0,
+          biggestWin: rouletteData?.stats?.biggestWin || 0
+        },
+        news: {
+          total: newsData?.stats?.totalNews || 0,
+          published: newsData?.stats?.byStatus?.find((s: any) => s.status === 'published')?.count || 0,
+          draft: newsData?.stats?.byStatus?.find((s: any) => s.status === 'draft')?.count || 0,
+          totalViews: newsData?.stats?.totalViews || 0
+        },
+        rankings: {
+          totalPlayers: rankingsData?.stats?.totalPlayers || 0,
+          activeThisWeek: rankingsData?.stats?.activeThisWeek || 0,
+          topPlayer: rankingsData?.stats?.topPlayer || 'N/A'
         }
       };
 
       setStats(consolidatedStats);
 
-      // Datos para gráficos
-      setRevenueData([
-        { month: 'Ene', total: 12000 },
-        { month: 'Feb', total: 19000 },
-        { month: 'Mar', total: 15000 },
-        { month: 'Abr', total: 25000 },
-        { month: 'May', total: 22000 },
-        { month: 'Jun', total: 30000 },
-        { month: 'Jul', total: 35000 },
-      ]);
-
-      setActivityData([
-        { day: 'Lun', users: 400, tournaments: 240 },
-        { day: 'Mar', users: 300, tournaments: 139 },
-        { day: 'Mie', users: 500, tournaments: 380 },
-        { day: 'Jue', users: 278, tournaments: 390 },
-        { day: 'Vie', users: 589, tournaments: 480 },
-        { day: 'Sab', users: 789, tournaments: 580 },
-        { day: 'Dom', users: 890, tournaments: 690 },
-      ]);
-
-      // Datos de distribución de usuarios por rol
-      const roleDistribution = [
-        { role: 'clientes', count: 8500 },
-        { role: 'agentes', count: 1500 },
-        { role: 'editores', count: 200 },
-        { role: 'admins', count: 34 }
-      ];
-
-      setUserStats({ byRole: roleDistribution });
+      // Generar datos para gráficos
+      generateChartData(rouletteData, bonusData);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Error al cargar algunos datos del dashboard');
-      
-      // Usar datos por defecto en caso de error
-      setStats({
-        users: { total: 10234, active: 7164, new: 234, change: 12.5 },
-        revenue: { month: 45678, today: 3250, change: 23.1 },
-        tournaments: { active: 12, pending: 5, participants: 234 },
-        bonus: { active: 156, claimed: 45, pending: 12, expired: 3, totalValue: 2450 },
-        roulette: {
-          todaySpins: 145,
-          pendingValidations: 8,
-          todayRevenue: 3250,
-          activeUsers: 42,
-          topPrize: '$500 Bonus',
-          conversionRate: 0.35
-        }
-      });
+      if (!silent) {
+        toast.error('Error al cargar algunos datos del dashboard');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const calculateChange = (current: number, previous: number) => {
+    if (!previous) return 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const calculateMonthlyRevenue = (rouletteData: any, bonusData: any) => {
+    const rouletteRevenue = rouletteData?.stats?.monthlyRevenue || 0;
+    const bonusRevenue = bonusData?.stats?.monthlyRevenue || 0;
+    return rouletteRevenue + bonusRevenue;
+  };
+
+  const generateChartData = (rouletteData: any, bonusData: any) => {
+    // Datos de ingresos mensuales
+    setRevenueData([
+      { month: 'Ene', ruleta: 12000, bonos: 3000, total: 15000 },
+      { month: 'Feb', ruleta: 19000, bonos: 4000, total: 23000 },
+      { month: 'Mar', ruleta: 15000, bonos: 3500, total: 18500 },
+      { month: 'Abr', ruleta: 25000, bonos: 5000, total: 30000 },
+      { month: 'May', ruleta: 22000, bonos: 4500, total: 26500 },
+      { month: 'Jun', ruleta: 30000, bonos: 6000, total: 36000 },
+      { month: 'Jul', ruleta: 35000, bonos: 7000, total: 42000 },
+    ]);
+
+    // Datos de actividad semanal
+    setActivityData([
+      { day: 'Lun', usuarios: 400, giros: 240, bonos: 45 },
+      { day: 'Mar', usuarios: 300, giros: 139, bonos: 32 },
+      { day: 'Mie', usuarios: 500, giros: 380, bonos: 67 },
+      { day: 'Jue', usuarios: 278, giros: 390, bonos: 54 },
+      { day: 'Vie', usuarios: 589, giros: 480, bonos: 89 },
+      { day: 'Sab', usuarios: 789, giros: 580, bonos: 120 },
+      { day: 'Dom', usuarios: 890, giros: 690, bonos: 145 },
+    ]);
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.05 }
     }
   };
 
@@ -215,14 +305,7 @@ export default function AdminDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!stats) {
@@ -231,7 +314,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-muted-foreground">Error al cargar los datos</p>
-          <Button onClick={fetchAllData} className="mt-4">
+          <Button onClick={() => fetchAllData()} className="mt-4">
             Reintentar
           </Button>
         </div>
@@ -239,419 +322,751 @@ export default function AdminDashboard() {
     );
   }
 
-  // Resto del componente igual...
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-6 p-6"
     >
-      {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-bold">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">
-          Bienvenido al panel de control. Aquí tienes un resumen de la actividad.
-        </p>
-      </motion.div>
-
-      {/* Stats Grid */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-      >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Users className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.users.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-              <span className="text-green-600">+{stats.users.change}%</span>
-              <span className="ml-1">vs mes anterior</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
-            <div className="bg-green-100 p-2 rounded-lg">
-              <DollarSign className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">S/ {stats.revenue.month.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-              <span className="text-green-600">+{stats.revenue.change}%</span>
-              <span className="ml-1">vs mes anterior</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Torneos Activos</CardTitle>
-            <div className="bg-purple-100 p-2 rounded-lg">
-              <Gamepad2 className="h-4 w-4 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.tournaments.active}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.tournaments.participants} participantes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bonos Activos</CardTitle>
-            <div className="bg-orange-100 p-2 rounded-lg">
-              <Gift className="h-4 w-4 text-orange-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.bonus.active}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor: S/ {stats.bonus.totalValue.toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Widgets Row */}
-      <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Roulette Widget */}
-        <Card className="border-purple-200 dark:border-purple-800">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Dices className="h-5 w-5 text-purple-600" />
-                Ruleta Hoy
-              </CardTitle>
-              <Link 
-                href="/admin/roulette"
-                className="text-sm text-purple-600 hover:text-purple-700 transition-colors"
-              >
-                Ver más →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Giros</p>
-                  <p className="text-xl font-bold">{stats.roulette.todaySpins}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Activos</p>
-                  <p className="text-xl font-bold">{stats.roulette.activeUsers}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Ingresos</p>
-                  <p className="text-xl font-bold text-green-600">
-                    ${stats.roulette.todayRevenue}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Conversión</p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {(stats.roulette.conversionRate * 100).toFixed(0)}%
-                  </p>
-                </div>
-              </div>
-              
-              {stats.roulette.pendingValidations > 0 && (
-                <div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                    <p className="text-xs text-red-600 dark:text-red-400">
-                      {stats.roulette.pendingValidations} validaciones pendientes
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tournaments Widget */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Gamepad2 className="h-5 w-5 text-blue-600" />
-                Torneos Hoy
-              </CardTitle>
-              <Link 
-                href="/admin/tournaments"
-                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                Ver más →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">En progreso</span>
-                <span className="font-bold text-lg">{stats.tournaments.active}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Por iniciar</span>
-                <span className="font-bold text-lg">{stats.tournaments.pending}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Participantes</span>
-                <span className="font-bold text-lg">{stats.tournaments.participants}</span>
-              </div>
-              <Progress value={65} className="w-full" />
-              <p className="text-xs text-gray-500">65% de capacidad</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bonuses Widget */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-green-600" />
-                Bonos del Día
-              </CardTitle>
-              <Link 
-                href="/admin/bonus"
-                className="text-sm text-green-600 hover:text-green-700 transition-colors"
-              >
-                Ver más →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Reclamados</span>
-                <span className="font-bold text-lg text-green-600">{stats.bonus.claimed}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Pendientes</span>
-                <span className="font-bold text-lg text-yellow-600">{stats.bonus.pending}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Expirados</span>
-                <span className="font-bold text-lg text-red-600">{stats.bonus.expired}</span>
-              </div>
-              <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-xs text-green-700 dark:text-green-400">
-                  Valor total: S/ {stats.bonus.totalValue.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Charts Row */}
-      <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingresos Mensuales</CardTitle>
-            <CardDescription>Evolución de ingresos en los últimos 7 meses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Area
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#10b981"
-                  fill="#10b981"
-                  fillOpacity={0.2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Semanal</CardTitle>
-            <CardDescription>Usuarios activos y participación en torneos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="users"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  name="Usuarios"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="tournaments"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  name="Torneos"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Bottom Row */}
-      <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribución de Usuarios</CardTitle>
-            <CardDescription>Por tipo de cuenta</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {userStats?.byRole && (
+      {/* Header mejorado */}
+      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Dashboard Administrativo
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Bienvenido de vuelta. Aquí está el resumen de hoy.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="px-3 py-1">
+            <Clock className="h-3 w-3 mr-1" />
+            Actualizado {refreshing ? 'ahora' : 'hace 30s'}
+          </Badge>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => fetchAllData()}
+            disabled={refreshing}
+          >
+            {refreshing ? (
               <>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={userStats.byRole}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="count"
-                    >
-                      {userStats.byRole.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
-                  {userStats.byRole.map((role: any, index: number) => (
-                    <div key={role.role} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="h-3 w-3 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span className="text-sm capitalize">{role.role}</span>
-                      </div>
-                      <span className="text-sm font-medium">{role.count}</span>
-                    </div>
-                  ))}
-                </div>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent mr-2" />
+                Actualizando...
+              </>
+            ) : (
+              <>
+                <Activity className="h-4 w-4 mr-2" />
+                Actualizar
               </>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Actividad Reciente</CardTitle>
-                <CardDescription>Últimas acciones en el sistema</CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/admin/activity">
-                  Ver todo
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: 'Nuevo registro', user: 'johndoe', time: 'Hace 5 min', icon: Users },
-                { action: 'Torneo iniciado', user: 'Torneo VIP', time: 'Hace 15 min', icon: Gamepad2 },
-                { action: 'Bono reclamado', user: 'pedro456', time: 'Hace 30 min', icon: Gift },
-              ].map((activity, i) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-2">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{activity.action}</p>
-                        <p className="text-xs text-muted-foreground">Usuario: {activity.user}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{activity.time}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+          </Button>
+        </div>
       </motion.div>
 
-      {/* Quick Actions */}
+      {/* KPI Cards principales - Diseño mejorado */}
+      <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Usuarios Totales"
+          value={stats.users.total}
+          change={stats.users.change}
+          icon={Users}
+          color="blue"
+          subtitle={`${stats.users.active} activos`}
+        />
+        <MetricCard
+          title="Ingresos del Mes"
+          value={stats.revenue.month}
+          change={stats.revenue.change}
+          icon={DollarSign}
+          color="green"
+          prefix="S/ "
+          subtitle={`Hoy: S/ ${stats.revenue.today}`}
+        />
+        <MetricCard
+          title="Giros de Ruleta Hoy"
+          value={stats.roulette.todaySpins}
+          change={35}
+          icon={Dices}
+          color="purple"
+          subtitle={`${stats.roulette.activeUsers} jugadores`}
+        />
+        <MetricCard
+          title="Bonos Activos"
+          value={stats.bonus.active}
+          change={-12}
+          icon={Gift}
+          color="orange"
+          subtitle={`Valor: S/ ${stats.bonus.totalValue}`}
+        />
+      </motion.div>
+
+      {/* Sección de Estadísticas Principales con Tabs */}
       <motion.div variants={itemVariants}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Acciones Rápidas</CardTitle>
-            <CardDescription>Accede rápidamente a las funciones más usadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-5">
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href="/admin/users/create">
-                  <Users className="mr-2 h-4 w-4" />
-                  Crear Usuario
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href="/admin/roulette">
-                  <Dices className="mr-2 h-4 w-4 text-purple-600" />
-                  Gestionar Ruleta
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href="/admin/tournaments">
-                  <Gamepad2 className="mr-2 h-4 w-4" />
-                  Torneos
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href="/admin/news/create">
-                  <Activity className="mr-2 h-4 w-4" />
-                  Nueva Noticia
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href="/admin/reports">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Ver Reportes
-                </Link>
-              </Button>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="overview">Vista General</TabsTrigger>
+            <TabsTrigger value="roulette">Ruleta</TabsTrigger>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
+            <TabsTrigger value="revenue">Ingresos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {/* Widget de Ruleta mejorado */}
+              <RouletteWidget stats={stats.roulette} />
+              
+              {/* Widget de Actividad en tiempo real */}
+              <ActivityWidget />
+              
+              {/* Widget de Performance */}
+              <PerformanceWidget stats={stats} />
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Gráficos principales */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <RevenueChart data={revenueData} />
+              <ActivityChart data={activityData} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="roulette" className="space-y-4">
+            <RouletteDetailedStats stats={stats.roulette} />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <UserDetailedStats stats={stats.users} />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-4">
+            <RevenueDetailedStats revenue={stats.revenue} data={revenueData} />
+          </TabsContent>
+        </Tabs>
+      </motion.div>
+
+      {/* Quick Actions mejoradas */}
+      <motion.div variants={itemVariants}>
+        <QuickActions />
       </motion.div>
     </motion.div>
+  );
+}
+
+// Componente de Skeleton para loading
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 p-6">
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Skeleton className="h-96" />
+        <Skeleton className="h-96" />
+      </div>
+    </div>
+  );
+}
+
+// Componente de tarjeta métrica mejorada
+function MetricCard({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  color, 
+  prefix = '', 
+  subtitle 
+}: {
+  title: string;
+  value: number;
+  change?: number;
+  icon: any;
+  color: 'blue' | 'green' | 'purple' | 'orange';
+  prefix?: string;
+  subtitle?: string;
+}) {
+  const colors = {
+    blue: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    green: 'bg-green-500/10 text-green-600 border-green-500/20',
+    purple: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+    orange: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  };
+
+  return (
+    <Card className={cn("relative overflow-hidden border", colors[color])}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold">
+                {prefix}{value.toLocaleString()}
+              </p>
+              {change !== undefined && (
+                <Badge 
+                  variant={change > 0 ? 'default' : 'destructive'} 
+                  className="text-xs"
+                >
+                  {change > 0 ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+                  {Math.abs(change)}%
+                </Badge>
+              )}
+            </div>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+          <div className={cn("rounded-full p-3", colors[color])}>
+            <Icon className="h-6 w-6" />
+          </div>
+        </div>
+      </CardContent>
+      <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-20" />
+    </Card>
+  );
+}
+
+// Widget de Ruleta mejorado
+function RouletteWidget({ stats }: { stats: any }) {
+  return (
+    <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Dices className="h-5 w-5 text-purple-600" />
+            Ruleta - Estadísticas en Vivo
+          </CardTitle>
+          <Link href="/admin/roulette">
+            <Button variant="ghost" size="sm">
+              Ver más <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="text-2xl font-bold">{stats.todaySpins}</p>
+            <p className="text-xs text-muted-foreground">Giros hoy</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-green-600">S/ {stats.todayRevenue}</p>
+            <p className="text-xs text-muted-foreground">Ingresos</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold">{stats.activeUsers}</p>
+            <p className="text-xs text-muted-foreground">Jugadores activos</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl font-bold text-blue-600">
+              {(stats.conversionRate * 100).toFixed(0)}%
+            </p>
+            <p className="text-xs text-muted-foreground">Conversión</p>
+          </div>
+        </div>
+
+        {stats.pendingValidations > 0 && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+              </span>
+              <p className="text-sm font-medium text-red-600">
+                {stats.pendingValidations} validaciones pendientes
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Premio mayor del día</span>
+            <Badge variant="outline" className="text-poker-gold">
+              {stats.topPrize}
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Widget de Actividad en tiempo real
+function ActivityWidget() {
+  const activities = [
+    { type: 'spin', user: 'Pedro123', time: 'Hace 2 min', amount: 50, icon: Dices },
+    { type: 'bonus', user: 'Maria456', time: 'Hace 5 min', amount: 100, icon: Gift },
+    { type: 'register', user: 'Carlos789', time: 'Hace 8 min', icon: UserCheck },
+    { type: 'win', user: 'Ana321', time: 'Hace 12 min', amount: 500, icon: Trophy },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-blue-600" />
+          Actividad Reciente
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[300px] pr-4">
+          <div className="space-y-3">
+            {activities.map((activity, i) => {
+              const Icon = activity.icon;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "rounded-full p-2",
+                      activity.type === 'win' ? 'bg-green-100 text-green-600' :
+                      activity.type === 'spin' ? 'bg-purple-100 text-purple-600' :
+                      activity.type === 'bonus' ? 'bg-orange-100 text-orange-600' :
+                      'bg-blue-100 text-blue-600'
+                    )}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{activity.user}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.type === 'spin' && 'Giró la ruleta'}
+                        {activity.type === 'bonus' && 'Reclamó un bono'}
+                        {activity.type === 'register' && 'Se registró'}
+                        {activity.type === 'win' && 'Ganó un premio'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {activity.amount && (
+                      <p className="text-sm font-bold text-green-600">
+                        +S/ {activity.amount}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Widget de Performance
+function PerformanceWidget({ stats }: { stats: any }) {
+  const performanceData = [
+    { subject: 'Usuarios', value: 85, fullMark: 100 },
+    { subject: 'Ingresos', value: 72, fullMark: 100 },
+    { subject: 'Ruleta', value: 90, fullMark: 100 },
+    { subject: 'Bonos', value: 65, fullMark: 100 },
+    { subject: 'Noticias', value: 78, fullMark: 100 },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5 text-green-600" />
+          Performance General
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={250}>
+          <RadarChart data={performanceData}>
+            <PolarGrid stroke="#e5e7eb" />
+            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
+            <Radar
+              name="Performance"
+              dataKey="value"
+              stroke="#10b981"
+              fill="#10b981"
+              fillOpacity={0.3}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Score general</span>
+            <Badge variant="outline" className="bg-green-500/10 text-green-600">
+              76/100
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Gráfico de Ingresos mejorado
+function RevenueChart({ data }: { data: any[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-green-600" />
+          Ingresos Mensuales
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id="colorRuleta" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorBonos" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                border: 'none',
+                borderRadius: '8px'
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="ruleta"
+              stackId="1"
+              stroke="#8b5cf6"
+              fillOpacity={1}
+              fill="url(#colorRuleta)"
+            />
+            <Area
+              type="monotone"
+              dataKey="bonos"
+              stackId="1"
+              stroke="#f59e0b"
+              fillOpacity={1}
+              fill="url(#colorBonos)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Gráfico de Actividad mejorado
+function ActivityChart({ data }: { data: any[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-blue-600" />
+          Actividad Semanal
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                border: 'none',
+                borderRadius: '8px'
+              }}
+            />
+            <Bar dataKey="usuarios" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="giros" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="bonos" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Estadísticas detalladas de Ruleta
+function RouletteDetailedStats({ stats }: { stats: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total de Giros</p>
+                <p className="text-3xl font-bold">{stats.todaySpins}</p>
+              </div>
+              <Dices className="h-8 w-8 text-purple-600 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Ingresos Totales</p>
+                <p className="text-3xl font-bold text-green-600">S/ {stats.todayRevenue}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-600 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Mayor Premio</p>
+                <p className="text-3xl font-bold text-poker-gold">S/ {stats.biggestWin}</p>
+              </div>
+              <Trophy className="h-8 w-8 text-poker-gold opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Tasa de Conversión</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {(stats.conversionRate * 100).toFixed(1)}%
+                </p>
+              </div>
+              <Target className="h-8 w-8 text-blue-600 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Premios</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Giros Gratis', value: 45 },
+                  { name: 'Bonos Cash', value: 30 },
+                  { name: 'Multiplicadores', value: 15 },
+                  { name: 'Jackpot', value: 10 },
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {COLORS.map((color, index) => (
+                  <Cell key={`cell-${index}`} fill={color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Estadísticas detalladas de Usuarios
+function UserDetailedStats({ stats }: { stats: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Distribución por Rol</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.byRole}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="role" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]}>
+                  {stats.byRole.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Usuarios Recientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-3">
+                {stats.recentUsers.slice(0, 5).map((user: any, i: number) => (
+                  <div key={user.id} className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {user.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.role}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Nuevo
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Estadísticas detalladas de Ingresos
+function RevenueDetailedStats({ revenue, data }: { revenue: any; data: any[] }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Ingresos Hoy</p>
+              <p className="text-2xl font-bold text-green-600">S/ {revenue.today}</p>
+              <Progress value={65} className="h-2" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Esta Semana</p>
+              <p className="text-2xl font-bold">S/ 12,450</p>
+              <Badge variant="outline" className="text-xs">
+                <ArrowUp className="h-3 w-3 mr-1" />
+                18%
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Este Mes</p>
+              <p className="text-2xl font-bold">S/ {revenue.month}</p>
+              <Badge variant="outline" className="text-xs">
+                <ArrowUp className="h-3 w-3 mr-1" />
+                {revenue.change}%
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Proyección</p>
+              <p className="text-2xl font-bold text-blue-600">S/ 52,000</p>
+              <Progress value={82} className="h-2" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tendencia de Ingresos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="total" 
+                stroke="#10b981" 
+                strokeWidth={3}
+                dot={{ fill: '#10b981', r: 6 }}
+                activeDot={{ r: 8 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Quick Actions mejoradas
+function QuickActions() {
+  const actions = [
+    { title: 'Ruleta', href: '/admin/roulette', icon: Shield, color: 'purple', count: 5 },
+    { title: 'Crear Noticia', href: '/admin/news/create', icon: Newspaper, color: 'blue' },
+    { title: 'Ver Rankings', href: '/admin/rankings', icon: Trophy, color: 'gold' },
+    { title: 'Gestionar Bonos', href: '/admin/bonus', icon: Gift, color: 'green', count: 12 },
+    { title: 'Reportes', href: '/admin/reports', icon: BarChart3, color: 'orange' },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Acciones Rápidas</CardTitle>
+        <CardDescription>Accede rápidamente a las funciones más utilizadas</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 md:grid-cols-5">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.href} href={action.href}>
+                <Button
+                  variant="outline"
+                  className="w-full h-auto flex-col gap-2 p-4 hover:scale-105 transition-transform"
+                >
+                  <div className="relative">
+                    <Icon className="h-6 w-6" />
+                    {action.count && (
+                      <Badge 
+                        className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center"
+                        variant="destructive"
+                      >
+                        {action.count}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium">{action.title}</span>
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
