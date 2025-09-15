@@ -24,7 +24,6 @@ const navigation = [
   { name: 'Inicio', href: '/', icon: Home },
   { name: 'Salas', href: '/rooms', icon: Gamepad2 },
   { name: 'Clubs', href: '/clubs', icon: Shield },
-  { name: 'Torneos', href: '/tournaments', icon: Trophy },
   { name: 'Ruleta', href: '/roulette', icon: Zap },
   { name: 'Noticias', href: '/news', icon: Newspaper },
 ];

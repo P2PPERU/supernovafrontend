@@ -1,30 +1,84 @@
-// src/types/club.types.ts
+// src/types/club.types.ts - CORREGIDO para evitar errores TypeScript
 export interface Club {
   id: string;
   name: string;
   description: string;
   shortDescription?: string;
+     
+  // Campos del backend (nombres snake_case)
+  owner_phone?: string;
+  owner_name?: string;
+  logo_url?: string;
+  banner_url?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  email?: string;
+  website?: string;
+  social_media?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    telegram?: string;
+    discord?: string;
+    [key: string]: string | undefined;
+  };
+     
+  is_active: boolean;
+  established_date?: string;
+  member_count?: number;
+  club_type?: 'casino' | 'poker_room' | 'tournament_club' | 'online' | 'mixed';
+  status?: 'active' | 'inactive' | 'pending' | 'suspended';
+     
+  // Settings como objeto JSON
+  settings?: {
+    features?: string[];
+    gameTypes?: string[];
+    requirements?: {
+      minAge?: number;
+      verificationRequired?: boolean;
+      minDeposit?: number;
+    };
+    schedule?: {
+      openHours?: string;
+      tournamentDays?: string[];
+      timeZone?: string;
+    };
+    shortDescription?: string;
+    isFeatured?: boolean;
+    order?: number;
+  };
+     
+  created_by: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+     
+  // Campos virtuales que pueden venir del frontend
   logo?: string;
   banner?: string;
-  website?: string;
+     
+  // Campos virtuales para compatibilidad con el frontend
   contactEmail?: string;
   contactPhone?: string;
-  features: string[];
-  gameTypes: string[];
+  isActive?: boolean;
+  isFeatured?: boolean;
   location?: {
-    country: string;
-    city?: string;
     address?: string;
+    city?: string;
+    country?: string;
   };
+  features?: string[];
+  gameTypes?: string[];
   requirements?: {
-    minAge: number;
-    verificationRequired: boolean;
+    minAge?: number;
+    verificationRequired?: boolean;
     minDeposit?: number;
   };
   schedule?: {
-    timeZone: string;
-    openHours: string;
-    tournamentDays: string[];
+    openHours?: string;
+    tournamentDays?: string[];
+    timeZone?: string;
   };
   socialLinks?: {
     facebook?: string;
@@ -33,30 +87,33 @@ export interface Club {
     telegram?: string;
     discord?: string;
   };
-  stats?: {
-    totalMembers: number;
-    activePlayers: number;
-    totalTournaments: number;
-    avgPrizePool: number;
-  };
+
+  // CAMPOS AGREGADOS PARA SOLUCIONAR ERRORES TYPESCRIPT
   rating?: number;
   totalReviews?: number;
-  isActive: boolean;
-  isFeatured: boolean;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
+  stats?: {
+    totalMembers?: number;
+    avgRating?: number;
+    totalGames?: number;
+  };
+     
+  // Relaciones
+  creator?: {
+    id: string;
+    username: string;
+  };
 }
 
 export interface ClubFilters {
   page?: number;
   limit?: number;
   search?: string;
+  city?: string;
+  type?: string;
   gameType?: string;
   country?: string;
-  isActive?: boolean;
-  isFeatured?: boolean;
-  sortBy?: 'name' | 'rating' | 'members' | 'createdAt';
+  status?: string;
+  sortBy?: string;
   order?: 'asc' | 'desc';
 }
 
@@ -67,22 +124,26 @@ export interface CreateClubData {
   website?: string;
   contactEmail?: string;
   contactPhone?: string;
-  features: string[];
-  gameTypes: string[];
+  ownerName?: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  order?: number;
+  features?: string[];
+  gameTypes?: string[];
   location?: {
-    country: string;
-    city?: string;
     address?: string;
+    city?: string;
+    country?: string;
   };
   requirements?: {
-    minAge: number;
-    verificationRequired: boolean;
+    minAge?: number;
+    verificationRequired?: boolean;
     minDeposit?: number;
   };
   schedule?: {
-    timeZone: string;
-    openHours: string;
-    tournamentDays: string[];
+    openHours?: string;
+    tournamentDays?: string[];
+    timeZone?: string;
   };
   socialLinks?: {
     facebook?: string;
@@ -91,65 +152,43 @@ export interface CreateClubData {
     telegram?: string;
     discord?: string;
   };
-  isActive?: boolean;
-  isFeatured?: boolean;
-  order?: number;
   logo?: File | null;
   banner?: File | null;
 }
 
-// Form data type that matches the zod schema exactly
-export interface CreateClubFormData {
-  name: string;
-  description: string;
-  shortDescription?: string;
-  website?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  features: string[];
-  gameTypes: string[];
-  isActive: boolean;
-  isFeatured: boolean;
-  order: number;
-  // Location fields (flattened)
-  locationCountry?: string;
-  locationCity?: string;
-  locationAddress?: string;
-  // Requirements fields (flattened)
-  minAge: number;
-  verificationRequired: boolean;
-  minDeposit?: number;
-  // Schedule fields (flattened)
-  timeZone?: string;
-  openHours?: string;
-  tournamentDays: string[];
-  // Social Links fields (flattened)
-  facebook?: string;
-  twitter?: string;
-  instagram?: string;
-  telegram?: string;
-  discord?: string;
+export interface UpdateClubData extends Partial<CreateClubData> {
+  id?: string;
 }
-
-export interface UpdateClubData extends Partial<CreateClubData> {}
 
 export interface ClubStats {
   totalClubs: number;
   activeClubs: number;
   featuredClubs: number;
   totalMembers: number;
-  byGameType: Array<{
-    gameType: string;
+  byStatus?: Array<{
+    status: string;
     count: number;
   }>;
-  byCountry: Array<{
-    country: string;
+  byType?: Array<{
+    type: string;
+    count: number;
+    avgMembers: number;
+  }>;
+  byCity?: Array<{
+    city: string;
     count: number;
   }>;
-  topClubs: Array<{
+  topClubs?: Array<{
     id: string;
     name: string;
     members: number;
-    rating: number;
+  }>;
+  byGameType?: Array<{
+    gameType: string;
+    count: number;
+  }>;
+  byCountry?: Array<{
+    country: string;
+    count: number;
   }>;
 }

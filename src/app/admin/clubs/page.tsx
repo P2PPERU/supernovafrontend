@@ -86,7 +86,7 @@ export default function AdminClubsPage() {
     try {
       await updateStatus.mutateAsync({
         id: club.id,
-        isActive: !club.isActive,
+        isActive: !club.is_active, // ← USAR is_active
       });
     } catch (error) {
       console.error('Error updating status:', error);
@@ -267,10 +267,10 @@ export default function AdminClubsPage() {
                           <div>
                             <p className="font-medium">{club.name}</p>
                             <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                              {club.shortDescription || club.description}
+                              {club.settings?.shortDescription || club.description}
                             </p>
                             <div className="flex gap-1 mt-1">
-                              {club.isFeatured && (
+                              {club.settings?.isFeatured && (
                                 <Badge variant="outline" className="text-xs">
                                   <Star className="h-3 w-3 mr-1" />
                                   Destacado
@@ -282,10 +282,10 @@ export default function AdminClubsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {club.contactEmail && (
+                          {club.email && (
                             <div className="flex items-center gap-1">
                               <span className="text-muted-foreground">@</span>
-                              <span>{club.contactEmail}</span>
+                              <span>{club.email}</span>
                             </div>
                           )}
                           {club.website && (
@@ -297,28 +297,28 @@ export default function AdminClubsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {club.location && (
+                        {(club.city || club.country) && (
                           <div className="flex items-center gap-1 text-sm">
                             <MapPin className="h-3 w-3 text-muted-foreground" />
-                            <span>{club.location.city}, {club.location.country}</span>
+                            <span>{club.city || 'Sin especificar'}, {club.country || 'Perú'}</span>
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Switch
-                            checked={club.isActive}
+                            checked={club.is_active}
                             onCheckedChange={() => handleStatusToggle(club)}
                           />
-                          <Badge variant={club.isActive ? 'default' : 'secondary'}>
-                            {club.isActive ? 'Activo' : 'Inactivo'}
+                          <Badge variant={club.is_active ? 'default' : 'secondary'}>
+                            {club.is_active ? 'Activo' : 'Inactivo'}
                           </Badge>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Users className="h-3 w-3 text-muted-foreground" />
-                          <span>{club.stats?.totalMembers || 0}</span>
+                          <span>{club.member_count || 0}</span>
                         </div>
                       </TableCell>
                       <TableCell>

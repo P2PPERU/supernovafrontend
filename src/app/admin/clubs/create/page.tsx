@@ -1,4 +1,4 @@
-// src/app/admin/clubs/create/page.tsx
+// src/app/admin/clubs/create/page.tsx - Corregido
 'use client';
 
 import { useState } from 'react';
@@ -15,9 +15,10 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useCreateClub } from '@/hooks/useClubs';
-import { ArrowLeft, Plus, X, Upload, Building2, Globe, Users, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, Building2, Globe, Users, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CreateClubData } from '@/types/club.types';
+import { toast } from 'sonner';
 
 const createClubSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
@@ -84,6 +85,7 @@ export default function CreateClubPage() {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [bannerPreview, setBannerPreview] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createClub = useCreateClub();
 
@@ -112,8 +114,25 @@ export default function CreateClubPage() {
   const watchedGameTypes = watch('gameTypes') || [];
   const watchedTournamentDays = watch('tournamentDays') || [];
 
+  const validateImage = (file: File): boolean => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    
+    if (file.size > maxSize) {
+      toast.error('El archivo es demasiado grande. Máximo 5MB.');
+      return false;
+    }
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Tipo de archivo no permitido. Solo JPEG, PNG y WebP.');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleImageUpload = (file: File, type: 'logo' | 'banner') => {
-    if (!file) return;
+    if (!file || !validateImage(file)) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -136,46 +155,74 @@ export default function CreateClubPage() {
     setValue(fieldName, newArray);
   };
 
-  const onSubmit: SubmitHandler<CreateClubFormFields> = (data) => {
-    const clubData: CreateClubData = {
-      name: data.name,
-      description: data.description,
-      shortDescription: data.shortDescription,
-      website: data.website,
-      contactEmail: data.contactEmail,
-      contactPhone: data.contactPhone,
-      features: data.features || [],
-      gameTypes: data.gameTypes || [],
-      isActive: data.isActive,
-      isFeatured: data.isFeatured,
-      order: data.order,
-      location: data.locationCountry ? {
-        country: data.locationCountry,
-        city: data.locationCity,
-        address: data.locationAddress,
-      } : undefined,
-      requirements: {
-        minAge: data.minAge,
-        verificationRequired: data.verificationRequired,
-        minDeposit: data.minDeposit,
-      },
-      schedule: data.timeZone ? {
-        timeZone: data.timeZone,
-        openHours: data.openHours || '', // Provide default empty string
-        tournamentDays: data.tournamentDays || [],
-      } : undefined,
-      socialLinks: (data.facebook || data.twitter || data.instagram || data.telegram || data.discord) ? {
-        facebook: data.facebook,
-        twitter: data.twitter,
-        instagram: data.instagram,
-        telegram: data.telegram,
-        discord: data.discord,
-      } : undefined,
-      logo: logoFile,
-      banner: bannerFile,
-    };
+  const onSubmit: SubmitHandler<CreateClubFormFields> = async (data) => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('📝 Submitting club data:', data);
+      
+      // Construir los datos del club
+      const clubData: CreateClubData = {
+        name: data.name.trim(),
+        description: data.description.trim(),
+        shortDescription: data.shortDescription?.trim() || undefined,
+        website: data.website || undefined,
+        contactEmail: data.contactEmail || undefined,
+        contactPhone: data.contactPhone?.trim() || undefined,
+        features: data.features || [],
+        gameTypes: data.gameTypes || [],
+        isActive: data.isActive,
+        isFeatured: data.isFeatured,
+        order: data.order || 0,
+        
+        // Location
+        location: (data.locationCountry || data.locationCity || data.locationAddress) ? {
+          country: data.locationCountry || '',
+          city: data.locationCity || undefined,
+          address: data.locationAddress || undefined,
+        } : undefined,
+        
+        // Requirements
+        requirements: {
+          minAge: data.minAge,
+          verificationRequired: data.verificationRequired,
+          minDeposit: data.minDeposit || undefined,
+        },
+        
+        // Schedule
+        schedule: (data.timeZone || data.openHours || data.tournamentDays.length > 0) ? {
+          timeZone: data.timeZone || '',
+          openHours: data.openHours || '',
+          tournamentDays: data.tournamentDays || [],
+        } : undefined,
+        
+        // Social Links
+        socialLinks: (data.facebook || data.twitter || data.instagram || data.telegram || data.discord) ? {
+          facebook: data.facebook || undefined,
+          twitter: data.twitter || undefined,
+          instagram: data.instagram || undefined,
+          telegram: data.telegram || undefined,
+          discord: data.discord || undefined,
+        } : undefined,
+        
+        // Files
+        logo: logoFile || undefined,
+        banner: bannerFile || undefined,
 
-    createClub.mutate(clubData);
+      };
+
+      console.log('🏗️ Final club data structure:', clubData);
+      
+      await createClub.mutateAsync(clubData);
+      
+    } catch (error: any) {
+      console.error('❌ Error submitting club:', error);
+      toast.error(error.message || 'Error al crear el club');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -213,12 +260,15 @@ export default function CreateClubPage() {
                 <Label htmlFor="name">Nombre del Club *</Label>
                 <Input
                   id="name"
-                  placeholder="Nombre del club"
+                  placeholder="Ej: Poker Palace Lima"
                   {...register('name')}
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.name.message}
+                  </p>
                 )}
               </div>
 
@@ -226,9 +276,12 @@ export default function CreateClubPage() {
                 <Label htmlFor="shortDescription">Descripción Corta</Label>
                 <Input
                   id="shortDescription"
-                  placeholder="Descripción breve para listados"
+                  placeholder="Descripción breve para listados (opcional)"
                   {...register('shortDescription')}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Se mostrará en las tarjetas de clubs
+                </p>
               </div>
             </div>
 
@@ -236,13 +289,16 @@ export default function CreateClubPage() {
               <Label htmlFor="description">Descripción Completa *</Label>
               <Textarea
                 id="description"
-                placeholder="Descripción detallada del club"
+                placeholder="Descripción detallada del club, servicios, características especiales..."
                 rows={4}
                 {...register('description')}
                 className={errors.description ? 'border-red-500' : ''}
               />
               {errors.description && (
-                <p className="text-sm text-red-500">{errors.description.message}</p>
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.description.message}
+                </p>
               )}
             </div>
 
@@ -283,7 +339,7 @@ export default function CreateClubPage() {
                         <input
                           id="logo-upload"
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
@@ -291,6 +347,9 @@ export default function CreateClubPage() {
                           }}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        JPEG, PNG o WebP. Máx 5MB
+                      </p>
                     </div>
                   )}
                 </div>
@@ -331,7 +390,7 @@ export default function CreateClubPage() {
                         <input
                           id="banner-upload"
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
@@ -339,6 +398,9 @@ export default function CreateClubPage() {
                           }}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Imagen horizontal. JPEG, PNG o WebP. Máx 5MB
+                      </p>
                     </div>
                   )}
                 </div>
@@ -366,7 +428,10 @@ export default function CreateClubPage() {
                   {...register('website')}
                 />
                 {errors.website && (
-                  <p className="text-sm text-red-500">{errors.website.message}</p>
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.website.message}
+                  </p>
                 )}
               </div>
 
@@ -379,7 +444,10 @@ export default function CreateClubPage() {
                   {...register('contactEmail')}
                 />
                 {errors.contactEmail && (
-                  <p className="text-sm text-red-500">{errors.contactEmail.message}</p>
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.contactEmail.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -388,7 +456,7 @@ export default function CreateClubPage() {
               <Label htmlFor="contactPhone">Teléfono de Contacto</Label>
               <Input
                 id="contactPhone"
-                placeholder="+1 234 567 8900"
+                placeholder="+51 999 999 999"
                 {...register('contactPhone')}
               />
             </div>
@@ -399,6 +467,9 @@ export default function CreateClubPage() {
         <Card>
           <CardHeader>
             <CardTitle>Características y Tipos de Juego</CardTitle>
+            <CardDescription>
+              Selecciona las características y tipos de juego que ofrece el club
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Features */}
@@ -409,13 +480,16 @@ export default function CreateClubPage() {
                   <Badge
                     key={feature}
                     variant={watchedFeatures.includes(feature) ? 'default' : 'outline'}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => toggleArrayItem(watchedFeatures, feature, setValue, 'features')}
                   >
                     {feature}
                   </Badge>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Selecciona las características que mejor describan el club
+              </p>
             </div>
 
             {/* Game Types */}
@@ -426,13 +500,16 @@ export default function CreateClubPage() {
                   <Badge
                     key={gameType}
                     variant={watchedGameTypes.includes(gameType) ? 'default' : 'outline'}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => toggleArrayItem(watchedGameTypes, gameType, setValue, 'gameTypes')}
                   >
                     {gameType}
                   </Badge>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Indica qué tipos de juegos de poker se ofrecen
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -441,6 +518,9 @@ export default function CreateClubPage() {
         <Card>
           <CardHeader>
             <CardTitle>Ubicación</CardTitle>
+            <CardDescription>
+              Información geográfica del club (opcional)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -467,8 +547,179 @@ export default function CreateClubPage() {
               <Label htmlFor="locationAddress">Dirección</Label>
               <Input
                 id="locationAddress"
-                placeholder="Dirección completa"
+                placeholder="Dirección completa (opcional)"
                 {...register('locationAddress')}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Requisitos */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Requisitos de Membresía</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="minAge">Edad Mínima *</Label>
+                <Input
+                  id="minAge"
+                  type="number"
+                  min="18"
+                  max="21"
+                  {...register('minAge', { valueAsNumber: true })}
+                />
+                {errors.minAge && (
+                  <p className="text-sm text-red-500">{errors.minAge.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minDeposit">Depósito Mínimo (S/)</Label>
+                <Input
+                  id="minDeposit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...register('minDeposit', { valueAsNumber: true })}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="verificationRequired">Verificación Requerida</Label>
+                <p className="text-sm text-muted-foreground">
+                  ¿Se requiere verificación de identidad?
+                </p>
+              </div>
+              <Switch
+                id="verificationRequired"
+                {...register('verificationRequired')}
+                checked={watch('verificationRequired')}
+                onCheckedChange={(checked) => setValue('verificationRequired', checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Horarios */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Horarios y Programación
+            </CardTitle>
+            <CardDescription>
+              Información sobre horarios de operación (opcional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="timeZone">Zona Horaria</Label>
+                <Input
+                  id="timeZone"
+                  placeholder="America/Lima"
+                  {...register('timeZone')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="openHours">Horario de Atención</Label>
+                <Input
+                  id="openHours"
+                  placeholder="24/7 o Lun-Dom 9:00-23:00"
+                  {...register('openHours')}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Días de Torneos</Label>
+              <div className="flex flex-wrap gap-2">
+                {dayOptions.map((day) => (
+                  <Badge
+                    key={day}
+                    variant={watchedTournamentDays.includes(day) ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => toggleArrayItem(watchedTournamentDays, day, setValue, 'tournamentDays')}
+                  >
+                    {day}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Redes Sociales */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Redes Sociales</CardTitle>
+            <CardDescription>
+              Enlaces a redes sociales del club (opcional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="facebook">Facebook</Label>
+                <Input
+                  id="facebook"
+                  type="url"
+                  placeholder="https://facebook.com/club"
+                  {...register('facebook')}
+                />
+                {errors.facebook && (
+                  <p className="text-sm text-red-500">{errors.facebook.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="twitter">Twitter</Label>
+                <Input
+                  id="twitter"
+                  type="url"
+                  placeholder="https://twitter.com/club"
+                  {...register('twitter')}
+                />
+                {errors.twitter && (
+                  <p className="text-sm text-red-500">{errors.twitter.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  type="url"
+                  placeholder="https://instagram.com/club"
+                  {...register('instagram')}
+                />
+                {errors.instagram && (
+                  <p className="text-sm text-red-500">{errors.instagram.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="telegram">Telegram</Label>
+                <Input
+                  id="telegram"
+                  placeholder="@club_telegram"
+                  {...register('telegram')}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discord">Discord</Label>
+              <Input
+                id="discord"
+                placeholder="Servidor de Discord"
+                {...register('discord')}
               />
             </div>
           </CardContent>
@@ -477,7 +728,7 @@ export default function CreateClubPage() {
         {/* Configuración */}
         <Card>
           <CardHeader>
-            <CardTitle>Configuración</CardTitle>
+            <CardTitle>Configuración de Publicación</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
@@ -516,20 +767,31 @@ export default function CreateClubPage() {
                 id="order"
                 type="number"
                 min="0"
+                placeholder="0"
                 {...register('order', { valueAsNumber: true })}
               />
+              <p className="text-xs text-muted-foreground">
+                Número menor = mayor prioridad en listados
+              </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Botones de acción */}
-        <div className="flex items-center justify-end gap-4">
-          <Button variant="outline" asChild>
+        <div className="flex items-center justify-end gap-4 pb-8">
+          <Button variant="outline" asChild disabled={isSubmitting}>
             <Link href="/admin/clubs">Cancelar</Link>
           </Button>
-          <Button type="submit" disabled={createClub.isPending}>
-            {createClub.isPending ? (
-              'Creando...'
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || createClub.isPending}
+            className="min-w-[120px]"
+          >
+            {isSubmitting || createClub.isPending ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                Creando...
+              </>
             ) : (
               <>
                 <Plus className="mr-2 h-4 w-4" />

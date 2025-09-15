@@ -1,7 +1,7 @@
 // src/app/clubs/[id]/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,24 +35,29 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 
 interface ClubDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function ClubDetailPage({ params }: ClubDetailPageProps) {
-  const { data, isLoading, error } = useClub(params.id);
+  const resolvedParams = use(params);
+  const { data, isLoading, error } = useClub(resolvedParams.id);
   const club = data?.club;
+  // DEBUG temporal
+  console.log('🎯 Club received in component:', {
+   logo: club?.logo,
+   banner: club?.banner,
+   logo_url: club?.logo_url,
+   banner_url: club?.banner_url
+ });
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="container mx-auto px-4 py-8">
           <div className="space-y-6">
-            {/* Header Skeleton */}
             <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
-            
-            {/* Content Skeleton */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <Card className="h-96 animate-pulse">
@@ -134,59 +139,50 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
           className="relative mb-8"
         >
           <Card className="overflow-hidden">
-            {/* Banner */}
-            {club.banner && (
-              <div className="h-64 bg-gradient-to-r from-poker-green to-poker-blue relative overflow-hidden">
+            <div className="h-64 bg-gradient-to-r from-poker-green to-poker-blue relative overflow-hidden">
+              {club.banner && (
                 <img 
                   src={club.banner} 
                   alt={`${club.name} banner`}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/40" />
-                
-                {/* Club Info Overlay */}
-                <div className="absolute inset-0 flex items-end p-8">
-                  <div className="flex items-end gap-6">
-                    <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                      <AvatarImage src={club.logo || ''} alt={club.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-poker-green to-poker-blue text-white font-bold text-2xl">
-                        {club.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-white">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-4xl font-bold">{club.name}</h1>
-                        {club.isFeatured && (
-                          <Badge className="bg-poker-gold text-black">
-                            <Star className="h-3 w-3 mr-1" />
-                            Destacado
-                          </Badge>
-                        )}
-                      </div>
-                      {club.location && (
-                        <div className="flex items-center gap-2 text-lg">
-                          <MapPin className="h-5 w-5" />
-                          <span>{club.location.city}, {club.location.country}</span>
-                        </div>
-                      )}
-                      {club.rating && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="font-semibold">{club.rating}</span>
-                          </div>
-                          {club.totalReviews && (
-                            <span className="text-white/80">
-                              ({club.totalReviews} reseñas)
-                            </span>
-                          )}
-                        </div>
+              )}
+              <div className="absolute inset-0 bg-black/40" />
+              
+              <div className="absolute inset-0 flex items-end p-8">
+                <div className="flex items-end gap-6">
+                  <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                    <AvatarImage src={club.logo || ''} alt={club.name} />
+                    <AvatarFallback className="bg-gradient-to-br from-poker-green to-poker-blue text-white font-bold text-2xl">
+                      {club.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h1 className="text-4xl font-bold">{club.name}</h1>
+                      {club.settings?.isFeatured && (
+                        <Badge className="bg-poker-gold text-black">
+                          <Star className="h-3 w-3 mr-1" />
+                          Destacado
+                        </Badge>
                       )}
                     </div>
+                    {(club.city || club.country) && (
+                      <div className="flex items-center gap-2 text-lg">
+                        <MapPin className="h-5 w-5" />
+                        <span>{club.city || 'Sin especificar'}, {club.country || 'Perú'}</span>
+                      </div>
+                    )}
+                    {club.member_count && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Users className="h-4 w-4" />
+                        <span>{club.member_count} miembros</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </Card>
         </motion.div>
 
@@ -208,6 +204,11 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
                 <p className="text-muted-foreground leading-relaxed">
                   {club.description}
                 </p>
+                {club.settings?.shortDescription && (
+                  <p className="text-sm text-muted-foreground mt-4 italic">
+                    {club.settings.shortDescription}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -218,15 +219,15 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Features */}
-                {club.features && club.features.length > 0 && (
+                {club.settings?.features && club.settings.features.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Zap className="h-4 w-4" />
                       Características
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {club.features.map((feature) => (
-                        <Badge key={feature} variant="outline">
+                      {club.settings.features.map((feature: string, index: number) => (
+                        <Badge key={index} variant="outline">
                           {feature}
                         </Badge>
                       ))}
@@ -235,15 +236,15 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
                 )}
 
                 {/* Game Types */}
-                {club.gameTypes && club.gameTypes.length > 0 && (
+                {club.settings?.gameTypes && club.settings.gameTypes.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Gamepad2 className="h-4 w-4" />
                       Tipos de Juego
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {club.gameTypes.map((gameType) => (
-                        <Badge key={gameType} variant="secondary">
+                      {club.settings.gameTypes.map((gameType: string, index: number) => (
+                        <Badge key={index} variant="secondary">
                           {gameType}
                         </Badge>
                       ))}
@@ -254,7 +255,7 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
             </Card>
 
             {/* Requirements */}
-            {club.requirements && (
+            {club.settings?.requirements && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -264,28 +265,30 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Edad mínima</p>
-                        <p className="text-sm text-muted-foreground">{club.requirements.minAge} años</p>
+                    {club.settings.requirements.minAge && (
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">Edad mínima</p>
+                          <p className="text-sm text-muted-foreground">{club.settings.requirements.minAge} años</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="font-medium">Verificación</p>
                         <p className="text-sm text-muted-foreground">
-                          {club.requirements.verificationRequired ? 'Requerida' : 'No requerida'}
+                          {club.settings.requirements.verificationRequired ? 'Requerida' : 'No requerida'}
                         </p>
                       </div>
                     </div>
-                    {club.requirements.minDeposit && (
+                    {club.settings.requirements.minDeposit && (
                       <div className="flex items-center gap-3">
                         <CheckCircle className="h-5 w-5 text-green-600" />
                         <div>
                           <p className="font-medium">Depósito mínimo</p>
-                          <p className="text-sm text-muted-foreground">S/ {club.requirements.minDeposit}</p>
+                          <p className="text-sm text-muted-foreground">S/ {club.settings.requirements.minDeposit}</p>
                         </div>
                       </div>
                     )}
@@ -319,61 +322,61 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
                 )}
 
                 <div className="space-y-3">
-                  {club.contactEmail && (
+                  {club.email && (
                     <div className="flex items-center gap-3">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <a 
-                        href={`mailto:${club.contactEmail}`}
+                        href={`mailto:${club.email}`}
                         className="text-sm hover:underline"
                       >
-                        {club.contactEmail}
+                        {club.email}
                       </a>
                     </div>
                   )}
                   
-                  {club.contactPhone && (
+                  {club.owner_phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <a 
-                        href={`tel:${club.contactPhone}`}
+                        href={`tel:${club.owner_phone}`}
                         className="text-sm hover:underline"
                       >
-                        {club.contactPhone}
+                        {club.owner_phone}
                       </a>
                     </div>
                   )}
                 </div>
 
                 {/* Social Links */}
-                {club.socialLinks && (
+                {club.social_media && Object.keys(club.social_media).length > 0 && (
                   <div>
                     <Separator className="my-4" />
                     <p className="text-sm font-medium mb-3">Redes Sociales</p>
                     <div className="flex gap-2">
-                      {club.socialLinks.facebook && (
+                      {club.social_media.facebook && (
                         <Button variant="outline" size="icon" asChild>
-                          <a href={club.socialLinks.facebook} target="_blank" rel="noopener noreferrer">
+                          <a href={club.social_media.facebook} target="_blank" rel="noopener noreferrer">
                             <Facebook className="h-4 w-4" />
                           </a>
                         </Button>
                       )}
-                      {club.socialLinks.twitter && (
+                      {club.social_media.twitter && (
                         <Button variant="outline" size="icon" asChild>
-                          <a href={club.socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+                          <a href={club.social_media.twitter} target="_blank" rel="noopener noreferrer">
                             <Twitter className="h-4 w-4" />
                           </a>
                         </Button>
                       )}
-                      {club.socialLinks.instagram && (
+                      {club.social_media.instagram && (
                         <Button variant="outline" size="icon" asChild>
-                          <a href={club.socialLinks.instagram} target="_blank" rel="noopener noreferrer">
+                          <a href={club.social_media.instagram} target="_blank" rel="noopener noreferrer">
                             <Instagram className="h-4 w-4" />
                           </a>
                         </Button>
                       )}
-                      {club.socialLinks.telegram && (
+                      {club.social_media.telegram && (
                         <Button variant="outline" size="icon" asChild>
-                          <a href={club.socialLinks.telegram} target="_blank" rel="noopener noreferrer">
+                          <a href={club.social_media.telegram} target="_blank" rel="noopener noreferrer">
                             <MessageCircle className="h-4 w-4" />
                           </a>
                         </Button>
@@ -385,74 +388,38 @@ export default function ClubDetailPage({ params }: ClubDetailPageProps) {
             </Card>
 
             {/* Stats */}
-            {club.stats && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Estadísticas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 rounded-lg bg-muted/50">
-                      <p className="text-2xl font-bold">{club.stats.totalMembers?.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Miembros</p>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-muted/50">
-                      <p className="text-2xl font-bold">{club.stats.activePlayers?.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Activos</p>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-muted/50">
-                      <p className="text-2xl font-bold">{club.stats.totalTournaments}</p>
-                      <p className="text-xs text-muted-foreground">Torneos</p>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-muted/50">
-                      <p className="text-2xl font-bold">S/ {club.stats.avgPrizePool?.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Pozo Prom.</p>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Información del Club
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Tipo</span>
+                    <span className="text-sm font-medium">{club.club_type || 'Poker Room'}</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Schedule */}
-            {club.schedule && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Horarios
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {club.schedule.openHours && (
-                    <div>
-                      <p className="text-sm font-medium">Horario de Atención</p>
-                      <p className="text-sm text-muted-foreground">{club.schedule.openHours}</p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Estado</span>
+                    <Badge variant={club.is_active ? 'default' : 'secondary'}>
+                      {club.is_active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Miembros</span>
+                    <span className="text-sm font-medium">{club.member_count || 0}</span>
+                  </div>
+                  {club.owner_name && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Contacto</span>
+                      <span className="text-sm font-medium">{club.owner_name}</span>
                     </div>
                   )}
-                  {club.schedule.tournamentDays && club.schedule.tournamentDays.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">Días de Torneos</p>
-                      <div className="flex flex-wrap gap-1">
-                        {club.schedule.tournamentDays.map((day) => (
-                          <Badge key={day} variant="outline" className="text-xs">
-                            {day}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {club.schedule.timeZone && (
-                    <div>
-                      <p className="text-sm font-medium">Zona Horaria</p>
-                      <p className="text-sm text-muted-foreground">{club.schedule.timeZone}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Created Date */}
             <Card>
