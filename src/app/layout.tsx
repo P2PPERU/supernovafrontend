@@ -11,9 +11,12 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SUPERNOVA - Tu club de poker online',
-  description: 'Únete al mejor club de poker online con torneos, ruleta y rankings',
+  title: 'SUPERNOVA - Los mejores tratos de Poker',
+  description: 'Únete a las mejores Uniones de poker online con torneos, ruleta y rankings',
   keywords: 'poker, casino, ruleta, torneos, rankings',
+  icons: {
+    icon: '/supernova-logo.png', // ✅ favicon personalizado
+  },
 };
 
 export default function RootLayout({

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -63,17 +64,27 @@ import {
   TrendingUp,
   Crown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Copy,
+  Calendar,
+  Settings,
+  FolderOpen,
+  UserPlus
 } from 'lucide-react';
 import { 
-  useAdminRankings,
-  useUpdatePlayerRanking,
-  useImportRankings,
-  useToggleRankingVisibility,
-  useDeleteRanking,
-  useRecalculatePositions,
+  useAdminGroups,
+  useCreateGroup,
+  useUpdateGroup,
+  useDeleteGroup,
+  useDuplicateGroup,
+  useAdminGroupRankings,
+  useUpdatePlayerInGroup,
+  useImportToGroup,
+  useToggleRankingInGroup,
+  useDeleteRankingFromGroup,
+  useRecalculateGroupPositions,
   useDownloadTemplate,
-  useRankingStats
+  useGroupStats
 } from '@/hooks/useRankings';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -87,88 +98,172 @@ const RANKING_TYPES = {
 };
 
 export default function AdminRankingsPage() {
-  const [filters, setFilters] = useState({
-    type: '',
-    season: '2025-01',
-    period: 'all_time',
-    search: '',
+  const [activeTab, setActiveTab] = useState('groups');
+  const [selectedGroup, setSelectedGroup] = useState<any>(null);
+  
+  // Filtros para grupos
+  const [groupFilters, setGroupFilters] = useState({
+    includeHidden: true,
+    type: 'all',
+    status: 'all',
+    page: 1,
+    limit: 20,
+  });
+
+  // Filtros para rankings
+  const [rankingFilters, setRankingFilters] = useState({
+    includeHidden: true,
     page: 1,
     limit: 25,
   });
 
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  // Dialogs
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false);
+  const [showCreateRankingDialog, setShowCreateRankingDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [selectedRanking, setSelectedRanking] = useState<any>(null);
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [createForm, setCreateForm] = useState({
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  
+  // Forms
+  const [groupForm, setGroupForm] = useState({
+    name: '',
+    description: '',
+    ranking_type: 'points',
+    start_date: '',
+    end_date: '',
+    is_active: true,
+    is_visible: true,
+    settings: {}
+  });
+
+  const [rankingForm, setRankingForm] = useState({
     playerId: '',
-    playerName: '',
     isExternal: false,
     externalPlayerName: '',
     externalPlayerEmail: '',
-    type: 'points',
     points: 0,
     handsPlayed: 0,
     tournamentsPlayed: 0,
     totalRake: 0,
     wins: 0,
     losses: 0,
-    season: '2025-01',
     isVisible: true,
   });
 
+  const [duplicateForm, setDuplicateForm] = useState({
+    name: '',
+    start_date: '',
+    end_date: '',
+    copy_rankings: false
+  });
+
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [selectedRanking, setSelectedRanking] = useState<any>(null);
+
   // Hooks
-  const { data, isLoading } = useAdminRankings(filters);
-  const { data: statsData } = useRankingStats({ season: filters.season });
-  const updateRanking = useUpdatePlayerRanking();
-  const importRankings = useImportRankings();
-  const toggleVisibility = useToggleRankingVisibility();
-  const deleteRanking = useDeleteRanking();
-  const recalculate = useRecalculatePositions();
+  const { data: groupsData, isLoading: groupsLoading } = useAdminGroups(groupFilters);
+  const { data: rankingsData, isLoading: rankingsLoading } = useAdminGroupRankings(
+    selectedGroup?.id || '', 
+    rankingFilters
+  );
+  const { data: statsData } = useGroupStats(selectedGroup?.id || '');
+
+  const createGroup = useCreateGroup();
+  const updateGroup = useUpdateGroup();
+  const deleteGroup = useDeleteGroup();
+  const duplicateGroup = useDuplicateGroup();
+  const updateRanking = useUpdatePlayerInGroup();
+  const importRankings = useImportToGroup();
+  const toggleVisibility = useToggleRankingInGroup();
+  const deleteRanking = useDeleteRankingFromGroup();
+  const recalculate = useRecalculateGroupPositions();
   const downloadTemplate = useDownloadTemplate();
 
-  const rankings = data?.rankings || [];
-  const totalPages = data?.totalPages || 1;
+  const groups = groupsData?.groups || [];
+  const rankings = rankingsData?.rankings || [];
+  const totalGroupPages = groupsData?.totalPages || 1;
+  const totalRankingPages = rankingsData?.totalPages || 1;
   const stats = statsData?.stats;
 
-  const handleCreateRanking = async () => {
+  // Handlers
+  const handleCreateGroup = async () => {
     try {
-      const playerId = createForm.isExternal 
-        ? createForm.externalPlayerName 
-        : createForm.playerId;
+      await createGroup.mutateAsync({
+        ...groupForm,
+        start_date: new Date(groupForm.start_date).toISOString(),
+        end_date: new Date(groupForm.end_date).toISOString(),
+      });
+      setShowCreateGroupDialog(false);
+      resetGroupForm();
+    } catch (error) {
+      console.error('Error creating group:', error);
+    }
+  };
+
+  const handleUpdateGroup = async () => {
+    if (!selectedGroup) return;
+    
+    try {
+      await updateGroup.mutateAsync({
+        groupId: selectedGroup.id,
+        data: {
+          ...groupForm,
+          start_date: new Date(groupForm.start_date).toISOString(),
+          end_date: new Date(groupForm.end_date).toISOString(),
+        }
+      });
+      setShowCreateGroupDialog(false);
+      setSelectedGroup(null);
+      resetGroupForm();
+    } catch (error) {
+      console.error('Error updating group:', error);
+    }
+  };
+
+  const handleCreateRanking = async () => {
+    if (!selectedGroup) return;
+
+    try {
+      const playerId = rankingForm.isExternal 
+        ? rankingForm.externalPlayerName 
+        : rankingForm.playerId;
 
       const data = {
-        type: createForm.type,
-        points: createForm.points,
-        handsPlayed: createForm.handsPlayed,
-        tournamentsPlayed: createForm.tournamentsPlayed,
-        totalRake: createForm.totalRake,
-        wins: createForm.wins,
-        losses: createForm.losses,
-        season: createForm.season,
-        isVisible: createForm.isVisible,
-        ...(createForm.isExternal && {
-          externalPlayerName: createForm.externalPlayerName,
-          externalPlayerEmail: createForm.externalPlayerEmail,
+        points: rankingForm.points,
+        handsPlayed: rankingForm.handsPlayed,
+        tournamentsPlayed: rankingForm.tournamentsPlayed,
+        totalRake: rankingForm.totalRake,
+        wins: rankingForm.wins,
+        losses: rankingForm.losses,
+        isVisible: rankingForm.isVisible,
+        ...(rankingForm.isExternal && {
+          externalPlayerName: rankingForm.externalPlayerName,
+          externalPlayerEmail: rankingForm.externalPlayerEmail,
         }),
       };
 
-      await updateRanking.mutateAsync({ playerId, data });
-      setShowCreateDialog(false);
-      resetCreateForm();
+      await updateRanking.mutateAsync({
+        groupId: selectedGroup.id,
+        playerId,
+        data
+      });
+      setShowCreateRankingDialog(false);
+      resetRankingForm();
     } catch (error) {
       console.error('Error creating ranking:', error);
     }
   };
 
   const handleImport = async () => {
-    if (!importFile) {
-      toast.error('Selecciona un archivo para importar');
+    if (!importFile || !selectedGroup) {
+      toast.error('Selecciona un archivo y un grupo');
       return;
     }
 
     try {
-      await importRankings.mutateAsync(importFile);
+      await importRankings.mutateAsync({
+        groupId: selectedGroup.id,
+        file: importFile
+      });
       setShowImportDialog(false);
       setImportFile(null);
     } catch (error) {
@@ -176,23 +271,75 @@ export default function AdminRankingsPage() {
     }
   };
 
-  const resetCreateForm = () => {
-    setCreateForm({
+  const handleDuplicate = async () => {
+    if (!selectedGroup) return;
+
+    try {
+      await duplicateGroup.mutateAsync({
+        groupId: selectedGroup.id,
+        data: {
+          ...duplicateForm,
+          start_date: new Date(duplicateForm.start_date).toISOString(),
+          end_date: new Date(duplicateForm.end_date).toISOString(),
+        }
+      });
+      setShowDuplicateDialog(false);
+      resetDuplicateForm();
+    } catch (error) {
+      console.error('Error duplicating group:', error);
+    }
+  };
+
+  const resetGroupForm = () => {
+    setGroupForm({
+      name: '',
+      description: '',
+      ranking_type: 'points',
+      start_date: '',
+      end_date: '',
+      is_active: true,
+      is_visible: true,
+      settings: {}
+    });
+  };
+
+  const resetRankingForm = () => {
+    setRankingForm({
       playerId: '',
-      playerName: '',
       isExternal: false,
       externalPlayerName: '',
       externalPlayerEmail: '',
-      type: 'points',
       points: 0,
       handsPlayed: 0,
       tournamentsPlayed: 0,
       totalRake: 0,
       wins: 0,
       losses: 0,
-      season: '2025-01',
       isVisible: true,
     });
+  };
+
+  const resetDuplicateForm = () => {
+    setDuplicateForm({
+      name: '',
+      start_date: '',
+      end_date: '',
+      copy_rankings: false
+    });
+  };
+
+  const getStatusBadge = (group: any) => {
+    const now = new Date();
+    const start = new Date(group.start_date);
+    const end = new Date(group.end_date);
+
+    if (now < start) {
+      return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">Próximo</Badge>;
+    } else if (now > end) {
+      return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/30">Finalizado</Badge>;
+    } else {
+      return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">Activo</Badge>;
+    }
   };
 
   const containerVariants = {
@@ -218,406 +365,791 @@ export default function AdminRankingsPage() {
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Rankings</h1>
+          <h1 className="text-3xl font-bold">Sistema de Rankings</h1>
           <p className="text-muted-foreground">
-            Administra los rankings de jugadores y estadísticas
+            Gestiona grupos de rankings y jugadores
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={() => downloadTemplate.mutate()}>
             <Download className="mr-2 h-4 w-4" />
-            Descargar Plantilla
+            Plantilla Excel
           </Button>
-          <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Importar Excel
-          </Button>
-          <Button onClick={() => setShowCreateDialog(true)}>
+          <Button onClick={() => {
+            setSelectedGroup(null);
+            resetGroupForm();
+            setShowCreateGroupDialog(true);
+          }}>
             <Plus className="mr-2 h-4 w-4" />
-            Crear Ranking
+            Crear Grupo
           </Button>
         </div>
       </motion.div>
 
-      {/* Estadísticas */}
-      {stats && (
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {stats.playersByType?.map((stat: any) => {
-            const config = RANKING_TYPES[stat.type as keyof typeof RANKING_TYPES];
-            if (!config) return null;
-            
-            const Icon = config.icon;
-            return (
-              <Card key={stat.type}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{config.label}</p>
-                      <p className="text-2xl font-bold">{stat.players}</p>
-                    </div>
-                    <Icon className={cn("h-8 w-8 opacity-50", config.color)} />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </motion.div>
-      )}
-
-      {/* Herramientas */}
+      {/* Tabs principales */}
       <motion.div variants={itemVariants}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Herramientas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => recalculate.mutate({})}
-                disabled={recalculate.isPending}
-              >
-                <RefreshCw className={cn("mr-2 h-4 w-4", recalculate.isPending && "animate-spin")} />
-                Recalcular Posiciones
-              </Button>
-              
-              <Button variant="outline" asChild>
-                <Link href="/rankings" target="_blank">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Página Pública
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="groups" className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Grupos de Rankings
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rankings" 
+              disabled={!selectedGroup}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              {selectedGroup ? `Jugadores - ${selectedGroup.name}` : 'Selecciona un grupo'}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Grupos de Rankings */}
+          <TabsContent value="groups" className="space-y-6">
+            {/* Filtros para grupos */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>Tipo</Label>
+                    <Select
+                      value={groupFilters.type}
+                      onValueChange={(value) => setGroupFilters({ ...groupFilters, type: value, page: 1 })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        {Object.entries(RANKING_TYPES).map(([key, config]) => (
+                          <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Estado</Label>
+                    <Select
+                      value={groupFilters.status}
+                      onValueChange={(value) => setGroupFilters({ ...groupFilters, status: value, page: 1 })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="active">Activos</SelectItem>
+                        <SelectItem value="upcoming">Próximos</SelectItem>
+                        <SelectItem value="finished">Finalizados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={groupFilters.includeHidden}
+                      onCheckedChange={(checked) => 
+                        setGroupFilters({ ...groupFilters, includeHidden: checked, page: 1 })
+                      }
+                    />
+                    <Label>Incluir ocultos</Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de grupos */}
+            <Card>
+              <CardContent className="p-0">
+                {groupsLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span>Cargando grupos...</span>
+                    </div>
+                  </div>
+                ) : groups.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-xl mb-2">No hay grupos de rankings</p>
+                    <p>Crea el primer grupo para comenzar</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Grupo</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Período</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Jugadores</TableHead>
+                        <TableHead>Creado</TableHead>
+                        <TableHead>Visibilidad</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {groups.map((group: any, index: number) => {
+                        const config = RANKING_TYPES[group.ranking_type as keyof typeof RANKING_TYPES];
+                        const Icon = config?.icon || Target;
+                        
+                        return (
+                          <motion.tr
+                            key={group.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={cn(
+                              "cursor-pointer hover:bg-muted/50 transition-colors",
+                              selectedGroup?.id === group.id && "bg-muted"
+                            )}
+                            onClick={() => setSelectedGroup(group)}
+                          >
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{group.name}</p>
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {group.description}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Icon className={cn("h-4 w-4", config?.color)} />
+                                <span>{config?.label}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div>{formatDate(group.start_date)}</div>
+                                <div className="text-muted-foreground">
+                                  hasta {formatDate(group.end_date)}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(group)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <span>{group.playerCount || 0}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div>{formatDate(group.created_at)}</div>
+                                {group.creator && (
+                                  <div className="text-muted-foreground">
+                                    por {group.creator.username}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {group.is_visible ? (
+                                  <Eye className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4 text-gray-500" />
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedGroup(group);
+                                      setActiveTab('rankings');
+                                    }}
+                                  >
+                                    <Users className="mr-2 h-4 w-4" />
+                                    Ver Jugadores
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setGroupForm({
+                                        name: group.name,
+                                        description: group.description || '',
+                                        ranking_type: group.ranking_type,
+                                        start_date: group.start_date.split('T')[0],
+                                        end_date: group.end_date.split('T')[0],
+                                        is_active: group.is_active,
+                                        is_visible: group.is_visible,
+                                        settings: group.settings || {}
+                                      });
+                                      setSelectedGroup(group);
+                                      setShowCreateGroupDialog(true);
+                                    }}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedGroup(group);
+                                      setDuplicateForm({
+                                        name: `${group.name} - Copia`,
+                                        start_date: '',
+                                        end_date: '',
+                                        copy_rankings: false
+                                      });
+                                      setShowDuplicateDialog(true);
+                                    }}
+                                  >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => deleteGroup.mutate(group.id)}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </motion.tr>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Paginación grupos */}
+            {totalGroupPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGroupFilters({ ...groupFilters, page: groupFilters.page - 1 })}
+                  disabled={groupFilters.page === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalGroupPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={groupFilters.page === pageNum ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setGroupFilters({ ...groupFilters, page: pageNum })}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGroupFilters({ ...groupFilters, page: groupFilters.page + 1 })}
+                  disabled={groupFilters.page === totalGroupPages}
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Tab: Rankings de Grupo */}
+          <TabsContent value="rankings" className="space-y-6">
+            {selectedGroup && (
+              <>
+                {/* Header del grupo seleccionado */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {(() => {
+                              const config = RANKING_TYPES[selectedGroup.ranking_type as keyof typeof RANKING_TYPES];
+                              const Icon = config?.icon || Target;
+                              return <Icon className={cn("h-5 w-5", config?.color)} />;
+                            })()}
+                            {selectedGroup.name}
+                          </CardTitle>
+                          <CardDescription>{selectedGroup.description}</CardDescription>
+                        </div>
+                        {getStatusBadge(selectedGroup)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Importar Excel
+                        </Button>
+                        <Button onClick={() => setShowCreateRankingDialog(true)}>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Agregar Jugador
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* Estadísticas del grupo */}
+                {stats && (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Jugadores</p>
+                            <p className="text-2xl font-bold">{stats.totalPlayers}</p>
+                          </div>
+                          <Users className="h-8 w-8 opacity-50" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Registrados</p>
+                            <p className="text-2xl font-bold">{stats.playerDistribution.registered}</p>
+                          </div>
+                          <Users className="h-8 w-8 opacity-50 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Externos</p>
+                            <p className="text-2xl font-bold">{stats.playerDistribution.external}</p>
+                          </div>
+                          <Users className="h-8 w-8 opacity-50 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Promedio</p>
+                            <p className="text-2xl font-bold">
+                              {stats.averages.primaryField === 'total_rake' 
+                                ? formatCurrency(stats.averages.avgValue)
+                                : Math.round(stats.averages.avgValue).toLocaleString()
+                              }
+                            </p>
+                          </div>
+                          <BarChart3 className="h-8 w-8 opacity-50" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Herramientas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Herramientas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => recalculate.mutate(selectedGroup.id)}
+                        disabled={recalculate.isPending}
+                      >
+                        <RefreshCw className={cn("mr-2 h-4 w-4", recalculate.isPending && "animate-spin")} />
+                        Recalcular Posiciones
+                      </Button>
+                      
+                      <Button variant="outline" asChild>
+                        <Link href={`/rankings`} target="_blank">
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Página Pública
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Tabla de rankings */}
+                <Card>
+                  <CardContent className="p-0">
+                    {rankingsLoading ? (
+                      <div className="p-8 text-center">
+                        <div className="inline-flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          <span>Cargando rankings...</span>
+                        </div>
+                      </div>
+                    ) : rankings.length === 0 ? (
+                      <div className="p-8 text-center text-muted-foreground">
+                        <Trophy className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                        <p className="text-xl mb-2">No hay jugadores en este grupo</p>
+                        <p>Agrega el primer jugador o importa datos desde Excel</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Posición</TableHead>
+                            <TableHead>Jugador</TableHead>
+                            <TableHead>Estadística Principal</TableHead>
+                            <TableHead>Manos</TableHead>
+                            <TableHead>Torneos</TableHead>
+                            <TableHead>Win Rate</TableHead>
+                            <TableHead>Rake</TableHead>
+                            <TableHead>Visibilidad</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {rankings.map((ranking: any, index: number) => {
+                            const getMainStat = () => {
+                              switch (selectedGroup.ranking_type) {
+                                case 'points':
+                                  return ranking.points?.toLocaleString() || 0;
+                                case 'hands_played':
+                                  return ranking.hands_played?.toLocaleString() || 0;
+                                case 'tournaments':
+                                  return ranking.tournaments_played || 0;
+                                case 'rake':
+                                  return formatCurrency(ranking.total_rake || 0);
+                                default:
+                                  return ranking.points?.toLocaleString() || 0;
+                              }
+                            };
+
+                            return (
+                              <motion.tr
+                                key={ranking.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                              >
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    {ranking.position <= 3 && (
+                                      <Crown className="h-4 w-4 text-yellow-500" />
+                                    )}
+                                    <span className="font-semibold">#{ranking.position}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={ranking.player?.profile_data?.avatar} />
+                                      <AvatarFallback>
+                                        {ranking.displayName?.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium">{ranking.displayName}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {ranking.displayEmail}
+                                      </p>
+                                      {ranking.is_external && (
+                                        <Badge variant="outline" className="text-xs mt-1">
+                                          Externo
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold">{getMainStat()}</span>
+                                </TableCell>
+                                <TableCell>{ranking.hands_played?.toLocaleString() || 0}</TableCell>
+                                <TableCell>{ranking.tournaments_played || 0}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <span>{ranking.win_rate}%</span>
+                                    {ranking.win_rate >= 60 && (
+                                      <TrendingUp className="h-3 w-3 text-green-500" />
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{formatCurrency(ranking.total_rake || 0)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Switch
+                                      checked={ranking.is_visible}
+                                      onCheckedChange={() => 
+                                        toggleVisibility.mutate({
+                                          groupId: selectedGroup.id,
+                                          rankingId: ranking.id,
+                                          isVisible: !ranking.is_visible
+                                        })
+                                      }
+                                    />
+                                    {ranking.is_visible ? (
+                                      <Eye className="h-4 w-4 text-green-500" />
+                                    ) : (
+                                      <EyeOff className="h-4 w-4 text-gray-500" />
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setRankingForm({
+                                            playerId: ranking.player_id || '',
+                                            isExternal: ranking.is_external,
+                                            externalPlayerName: ranking.external_player_name || '',
+                                            externalPlayerEmail: ranking.external_player_email || '',
+                                            points: ranking.points || 0,
+                                            handsPlayed: ranking.hands_played || 0,
+                                            tournamentsPlayed: ranking.tournaments_played || 0,
+                                            totalRake: ranking.total_rake || 0,
+                                            wins: ranking.wins || 0,
+                                            losses: ranking.losses || 0,
+                                            isVisible: ranking.is_visible,
+                                          });
+                                          setSelectedRanking(ranking);
+                                          setShowCreateRankingDialog(true);
+                                        }}
+                                      >
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Editar
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => deleteRanking.mutate({
+                                          groupId: selectedGroup.id,
+                                          rankingId: ranking.id
+                                        })}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Eliminar
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </motion.tr>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Paginación rankings */}
+                {totalRankingPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRankingFilters({ ...rankingFilters, page: rankingFilters.page - 1 })}
+                      disabled={rankingFilters.page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalRankingPages) }, (_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={rankingFilters.page === pageNum ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setRankingFilters({ ...rankingFilters, page: pageNum })}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRankingFilters({ ...rankingFilters, page: rankingFilters.page + 1 })}
+                      disabled={rankingFilters.page === totalRankingPages}
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </motion.div>
 
-      {/* Filtros */}
-      <motion.div variants={itemVariants}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div>
-                <Label htmlFor="type">Tipo</Label>
-                <Select
-                  value={filters.type}
-                  onValueChange={(value) => setFilters({ ...filters, type: value, page: 1 })}
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
-                    {Object.entries(RANKING_TYPES).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Dialog para crear/editar grupo */}
+      <Dialog open={showCreateGroupDialog} onOpenChange={setShowCreateGroupDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedGroup ? 'Editar Grupo de Ranking' : 'Crear Grupo de Ranking'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedGroup 
+                ? 'Modifica la configuración del grupo de ranking'
+                : 'Configura un nuevo grupo de ranking para organizar a los jugadores'
+              }
+            </DialogDescription>
+          </DialogHeader>
 
-              <div>
-                <Label htmlFor="season">Temporada</Label>
-                <Select
-                  value={filters.season}
-                  onValueChange={(value) => setFilters({ ...filters, season: value, page: 1 })}
-                >
-                  <SelectTrigger id="season">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2025-01">2025-01</SelectItem>
-                    <SelectItem value="2024-12">2024-12</SelectItem>
-                    <SelectItem value="2024-11">2024-11</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="period">Período</Label>
-                <Select
-                  value={filters.period}
-                  onValueChange={(value) => setFilters({ ...filters, period: value, page: 1 })}
-                >
-                  <SelectTrigger id="period">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all_time">Todo el tiempo</SelectItem>
-                    <SelectItem value="monthly">Mensual</SelectItem>
-                    <SelectItem value="weekly">Semanal</SelectItem>
-                    <SelectItem value="daily">Diario</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="search">Buscar</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="space-y-6">
+            {/* Información básica */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Información básica</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="groupName">Nombre del grupo</Label>
                   <Input
-                    id="search"
-                    placeholder="Buscar por nombre..."
-                    value={filters.search}
-                    onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-                    className="pl-10"
+                    id="groupName"
+                    value={groupForm.name}
+                    onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
+                    placeholder="ej: Cash Game Ranking Enero 2025"
+                  />
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="groupDescription">Descripción</Label>
+                  <Textarea
+                    id="groupDescription"
+                    value={groupForm.description}
+                    onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
+                    placeholder="Describe el propósito y reglas de este ranking"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="groupType">Tipo de ranking</Label>
+                  <Select
+                    value={groupForm.ranking_type}
+                    onValueChange={(value) => setGroupForm({ ...groupForm, ranking_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(RANKING_TYPES).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Configuración de fechas */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Período del ranking</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Fecha de inicio</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={groupForm.start_date}
+                    onChange={(e) => setGroupForm({ ...groupForm, start_date: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">Fecha de fin</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={groupForm.end_date}
+                    onChange={(e) => setGroupForm({ ...groupForm, end_date: e.target.value })}
                   />
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
-      {/* Tabla de rankings */}
-      <motion.div variants={itemVariants}>
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center">
-                <div className="inline-flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span>Cargando rankings...</span>
+            {/* Configuración */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Configuración</h4>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={groupForm.is_active}
+                    onCheckedChange={(checked) => 
+                      setGroupForm({ ...groupForm, is_active: checked })
+                    }
+                  />
+                  <Label>Grupo activo (acepta actualizaciones)</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={groupForm.is_visible}
+                    onCheckedChange={(checked) => 
+                      setGroupForm({ ...groupForm, is_visible: checked })
+                    }
+                  />
+                  <Label>Visible públicamente</Label>
                 </div>
               </div>
-            ) : rankings.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                <Trophy className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-xl mb-2">No hay rankings</p>
-                <p>Crea el primer ranking o importa datos desde Excel</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Posición</TableHead>
-                    <TableHead>Jugador</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Estadística Principal</TableHead>
-                    <TableHead>Win Rate</TableHead>
-                    <TableHead>Temporada</TableHead>
-                    <TableHead>Visibilidad</TableHead>
-                    <TableHead>Última Actualización</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rankings.map((ranking: any, index: number) => {
-                    const config = RANKING_TYPES[ranking.ranking_type as keyof typeof RANKING_TYPES];
-                    const Icon = config?.icon || Target;
-                    
-                    const getMainStat = () => {
-                      switch (ranking.ranking_type) {
-                        case 'points':
-                          return ranking.points?.toLocaleString() || 0;
-                        case 'hands_played':
-                          return ranking.hands_played?.toLocaleString() || 0;
-                        case 'tournaments':
-                          return ranking.tournaments_played || 0;
-                        case 'rake':
-                          return formatCurrency(ranking.total_rake || 0);
-                        default:
-                          return ranking.points?.toLocaleString() || 0;
-                      }
-                    };
-
-                    return (
-                      <motion.tr
-                        key={ranking.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {ranking.position <= 3 && (
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                            )}
-                            <span className="font-semibold">#{ranking.position}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={ranking.player?.profile?.avatar} />
-                              <AvatarFallback>
-                                {ranking.displayName?.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{ranking.displayName}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {ranking.displayEmail}
-                              </p>
-                              {ranking.is_external && (
-                                <Badge variant="outline" className="text-xs mt-1">
-                                  Externo
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Icon className={cn("h-4 w-4", config?.color)} />
-                            <span>{config?.label}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-semibold">{getMainStat()}</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span>{ranking.win_rate}%</span>
-                            {ranking.win_rate >= 60 && (
-                              <TrendingUp className="h-3 w-3 text-green-500" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{ranking.season}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={ranking.is_visible}
-                              onCheckedChange={() => 
-                                toggleVisibility.mutate({
-                                  rankingId: ranking.id,
-                                  isVisible: !ranking.is_visible
-                                })
-                              }
-                            />
-                            {ranking.is_visible ? (
-                              <Eye className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <EyeOff className="h-4 w-4 text-gray-500" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm">{formatDate(ranking.updated_at)}</p>
-                            {ranking.updatedBy && (
-                              <p className="text-xs text-muted-foreground">
-                                por {ranking.updatedBy.username}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  // Llenar formulario con datos existentes
-                                  setCreateForm({
-                                    ...createForm,
-                                    playerId: ranking.player_id || '',
-                                    playerName: ranking.displayName,
-                                    isExternal: ranking.is_external,
-                                    externalPlayerName: ranking.external_player_name || '',
-                                    externalPlayerEmail: ranking.external_player_email || '',
-                                    type: ranking.ranking_type,
-                                    points: ranking.points || 0,
-                                    handsPlayed: ranking.hands_played || 0,
-                                    tournamentsPlayed: ranking.tournaments_played || 0,
-                                    totalRake: ranking.total_rake || 0,
-                                    wins: ranking.wins || 0,
-                                    losses: ranking.losses || 0,
-                                    season: ranking.season,
-                                    isVisible: ranking.is_visible,
-                                  });
-                                  setSelectedRanking(ranking);
-                                  setShowCreateDialog(true);
-                                }}
-                              >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => deleteRanking.mutate(ranking.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <motion.div variants={itemVariants} className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
-            disabled={filters.page === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Anterior
-          </Button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <Button
-                  key={pageNum}
-                  variant={filters.page === pageNum ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFilters({ ...filters, page: pageNum })}
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-            disabled={filters.page === totalPages}
-          >
-            Siguiente
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </motion.div>
-      )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateGroupDialog(false);
+                setSelectedGroup(null);
+                resetGroupForm();
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={selectedGroup ? handleUpdateGroup : handleCreateGroup}
+              disabled={createGroup.isPending || updateGroup.isPending}
+            >
+              {(createGroup.isPending || updateGroup.isPending) ? 'Guardando...' : (selectedGroup ? 'Actualizar' : 'Crear')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para crear/editar ranking */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateRankingDialog} onOpenChange={setShowCreateRankingDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedRanking ? 'Editar Ranking' : 'Crear Ranking'}
+              {selectedRanking ? 'Editar Ranking' : 'Agregar Jugador'}
             </DialogTitle>
             <DialogDescription>
               {selectedRanking 
                 ? 'Modifica los datos del ranking seleccionado'
-                : 'Agrega un nuevo jugador al ranking'
+                : `Agrega un nuevo jugador al ranking: ${selectedGroup?.name}`
               }
             </DialogDescription>
           </DialogHeader>
@@ -626,24 +1158,24 @@ export default function AdminRankingsPage() {
             {/* Tipo de jugador */}
             <div className="flex items-center space-x-2">
               <Switch
-                checked={createForm.isExternal}
+                checked={rankingForm.isExternal}
                 onCheckedChange={(checked) => 
-                  setCreateForm({ ...createForm, isExternal: checked })
+                  setRankingForm({ ...rankingForm, isExternal: checked })
                 }
               />
               <Label>Jugador externo (sin cuenta en el sistema)</Label>
             </div>
 
             {/* Datos del jugador */}
-            {createForm.isExternal ? (
+            {rankingForm.isExternal ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="externalPlayerName">Nombre del jugador</Label>
                   <Input
                     id="externalPlayerName"
-                    value={createForm.externalPlayerName}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.externalPlayerName}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       externalPlayerName: e.target.value 
                     })}
                     placeholder="Nombre completo"
@@ -654,9 +1186,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="externalPlayerEmail"
                     type="email"
-                    value={createForm.externalPlayerEmail}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.externalPlayerEmail}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       externalPlayerEmail: e.target.value 
                     })}
                     placeholder="email@ejemplo.com"
@@ -668,52 +1200,15 @@ export default function AdminRankingsPage() {
                 <Label htmlFor="playerId">ID del jugador registrado</Label>
                 <Input
                   id="playerId"
-                  value={createForm.playerId}
-                  onChange={(e) => setCreateForm({ 
-                    ...createForm, 
+                  value={rankingForm.playerId}
+                  onChange={(e) => setRankingForm({ 
+                    ...rankingForm, 
                     playerId: e.target.value 
                   })}
                   placeholder="Username o ID del usuario"
                 />
               </div>
             )}
-
-            {/* Configuración del ranking */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Tipo de ranking</Label>
-                <Select
-                  value={createForm.type}
-                  onValueChange={(value) => setCreateForm({ ...createForm, type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(RANKING_TYPES).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="season">Temporada</Label>
-                <Select
-                  value={createForm.season}
-                  onValueChange={(value) => setCreateForm({ ...createForm, season: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2025-01">2025-01</SelectItem>
-                    <SelectItem value="2024-12">2024-12</SelectItem>
-                    <SelectItem value="2024-11">2024-11</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             {/* Estadísticas */}
             <div className="space-y-4">
@@ -724,9 +1219,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="points"
                     type="number"
-                    value={createForm.points}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.points}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       points: parseInt(e.target.value) || 0 
                     })}
                   />
@@ -737,9 +1232,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="handsPlayed"
                     type="number"
-                    value={createForm.handsPlayed}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.handsPlayed}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       handsPlayed: parseInt(e.target.value) || 0 
                     })}
                   />
@@ -750,9 +1245,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="tournamentsPlayed"
                     type="number"
-                    value={createForm.tournamentsPlayed}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.tournamentsPlayed}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       tournamentsPlayed: parseInt(e.target.value) || 0 
                     })}
                   />
@@ -764,9 +1259,9 @@ export default function AdminRankingsPage() {
                     id="totalRake"
                     type="number"
                     step="0.01"
-                    value={createForm.totalRake}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.totalRake}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       totalRake: parseFloat(e.target.value) || 0 
                     })}
                   />
@@ -777,9 +1272,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="wins"
                     type="number"
-                    value={createForm.wins}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.wins}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       wins: parseInt(e.target.value) || 0 
                     })}
                   />
@@ -790,9 +1285,9 @@ export default function AdminRankingsPage() {
                   <Input
                     id="losses"
                     type="number"
-                    value={createForm.losses}
-                    onChange={(e) => setCreateForm({ 
-                      ...createForm, 
+                    value={rankingForm.losses}
+                    onChange={(e) => setRankingForm({ 
+                      ...rankingForm, 
                       losses: parseInt(e.target.value) || 0 
                     })}
                   />
@@ -800,12 +1295,12 @@ export default function AdminRankingsPage() {
               </div>
 
               {/* Win rate calculado */}
-              {(createForm.wins > 0 || createForm.losses > 0) && (
+              {(rankingForm.wins > 0 || rankingForm.losses > 0) && (
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
                     Win Rate calculado: {
-                      createForm.wins + createForm.losses > 0 
-                        ? ((createForm.wins / (createForm.wins + createForm.losses)) * 100).toFixed(1)
+                      rankingForm.wins + rankingForm.losses > 0 
+                        ? ((rankingForm.wins / (rankingForm.wins + rankingForm.losses)) * 100).toFixed(1)
                         : 0
                     }%
                   </p>
@@ -816,9 +1311,9 @@ export default function AdminRankingsPage() {
             {/* Visibilidad */}
             <div className="flex items-center space-x-2">
               <Switch
-                checked={createForm.isVisible}
+                checked={rankingForm.isVisible}
                 onCheckedChange={(checked) => 
-                  setCreateForm({ ...createForm, isVisible: checked })
+                  setRankingForm({ ...rankingForm, isVisible: checked })
                 }
               />
               <Label>Visible en rankings públicos</Label>
@@ -829,9 +1324,9 @@ export default function AdminRankingsPage() {
             <Button
               variant="outline"
               onClick={() => {
-                setShowCreateDialog(false);
+                setShowCreateRankingDialog(false);
                 setSelectedRanking(null);
-                resetCreateForm();
+                resetRankingForm();
               }}
             >
               Cancelar
@@ -840,7 +1335,7 @@ export default function AdminRankingsPage() {
               onClick={handleCreateRanking}
               disabled={updateRanking.isPending}
             >
-              {updateRanking.isPending ? 'Guardando...' : (selectedRanking ? 'Actualizar' : 'Crear')}
+              {updateRanking.isPending ? 'Guardando...' : (selectedRanking ? 'Actualizar' : 'Agregar')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -852,7 +1347,7 @@ export default function AdminRankingsPage() {
           <DialogHeader>
             <DialogTitle>Importar Rankings desde Excel</DialogTitle>
             <DialogDescription>
-              Sube un archivo Excel con los datos de rankings. Descarga la plantilla si necesitas el formato.
+              Sube un archivo Excel con los datos de rankings para {selectedGroup?.name}.
             </DialogDescription>
           </DialogHeader>
 
@@ -883,9 +1378,9 @@ export default function AdminRankingsPage() {
               <p>Formato del archivo:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>La primera fila debe contener los encabezados</li>
-                <li>Columnas requeridas: username/playerName, points, hands_played, etc.</li>
-                <li>Para jugadores externos usar "playerName" en lugar de "username"</li>
-                <li>El sistema calculará automáticamente las posiciones</li>
+                <li>Columnas requeridas: Usuario/Nombre, Email (opcional)</li>
+                <li>Columnas de datos: Puntos, Manos, Torneos, Rake, Victorias, Derrotas</li>
+                <li>Para jugadores externos usar nombres sin registrar</li>
               </ul>
             </div>
           </div>
@@ -912,6 +1407,89 @@ export default function AdminRankingsPage() {
               disabled={!importFile || importRankings.isPending}
             >
               {importRankings.isPending ? 'Importando...' : 'Importar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para duplicar grupo */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar Grupo de Ranking</DialogTitle>
+            <DialogDescription>
+              Crea una copia de {selectedGroup?.name} con nuevas fechas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="duplicateName">Nombre del nuevo grupo</Label>
+              <Input
+                id="duplicateName"
+                value={duplicateForm.name}
+                onChange={(e) => setDuplicateForm({ 
+                  ...duplicateForm, 
+                  name: e.target.value 
+                })}
+                placeholder="Nombre para la copia"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="duplicateStartDate">Fecha de inicio</Label>
+                <Input
+                  id="duplicateStartDate"
+                  type="date"
+                  value={duplicateForm.start_date}
+                  onChange={(e) => setDuplicateForm({ 
+                    ...duplicateForm, 
+                    start_date: e.target.value 
+                  })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duplicateEndDate">Fecha de fin</Label>
+                <Input
+                  id="duplicateEndDate"
+                  type="date"
+                  value={duplicateForm.end_date}
+                  onChange={(e) => setDuplicateForm({ 
+                    ...duplicateForm, 
+                    end_date: e.target.value 
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={duplicateForm.copy_rankings}
+                onCheckedChange={(checked) => 
+                  setDuplicateForm({ ...duplicateForm, copy_rankings: checked })
+                }
+              />
+              <Label>Copiar jugadores existentes</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDuplicateDialog(false);
+                resetDuplicateForm();
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDuplicate}
+              disabled={duplicateGroup.isPending}
+            >
+              {duplicateGroup.isPending ? 'Duplicando...' : 'Duplicar'}
             </Button>
           </DialogFooter>
         </DialogContent>

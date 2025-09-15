@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, Home, Trophy, Gamepad2, Newspaper, User, Shield, LogOut, Settings, Wallet, Gift, Zap } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,12 +21,12 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 
 const navigation = [
-  { name: 'Inicio', href: '/', icon: Home },
-  { name: 'Salas', href: '/rooms', icon: Gamepad2 },
-  { name: 'Clubs', href: '/clubs', icon: Shield },
-  { name: 'Rankings', href: '/rankings', icon: Trophy }, // ← NUEVO
-  { name: 'Ruleta', href: '/roulette', icon: Zap },
-  { name: 'Noticias', href: '/news', icon: Newspaper },
+  { name: 'Inicio', href: '/' },
+  { name: 'Salas', href: '/rooms' },
+  { name: 'Clubs', href: '/clubs' },
+  { name: 'Rankings', href: '/rankings' },
+  { name: 'Ruleta', href: '/roulette' },
+  { name: 'Noticias', href: '/news' },
 ];
 
 export function Header() {
@@ -57,7 +57,7 @@ export function Header() {
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-24 items-center justify-between">
-          {/* Logo SUPERNOVA con tipografía original pero sin brillo */}
+          {/* Logo SUPERNOVA con tipografía normal (sin cursiva) y más pequeño */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative">
               {/* Efecto glow detrás del logo */}
@@ -73,16 +73,16 @@ export function Header() {
               </div>
             </div>
             
-            {/* Texto SUPERNOVA con tipografía original pero sin efectos de brillo */}
+            {/* Texto SUPERNOVA sin cursiva y más pequeño */}
             <div className="hidden sm:flex flex-col">
               <div className="relative">
-                {/* Texto principal con tipografía original */}
+                {/* Texto principal sin cursiva y tamaño reducido */}
                 <h1 
-                  className="text-3xl lg:text-4xl xl:text-5xl leading-none font-black tracking-wider relative z-10"
+                  className="text-2xl lg:text-3xl xl:text-4xl leading-none font-black tracking-wider relative z-10"
                   style={{
                     fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
                     fontWeight: 900,
-                    fontStyle: 'italic',
+                    fontStyle: 'normal',
                     textTransform: 'uppercase',
                     background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #e0e0e0 75%, #ffffff 100%)',
                     WebkitBackgroundClip: 'text',
@@ -119,14 +119,12 @@ export function Header() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
             {navigation.map((item) => {
-              const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="group flex items-center space-x-2 text-sm font-medium text-gray-300 hover:text-white transition-colors relative"
+                  className="group flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors relative"
                 >
-                  <Icon className="h-4 w-4" />
                   <span>{item.name}</span>
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-yellow-500 to-green-500 group-hover:w-full transition-all duration-300" />
                 </Link>
@@ -138,14 +136,6 @@ export function Header() {
           <div className="hidden lg:flex lg:items-center lg:space-x-4">
             {isAuthenticated ? (
               <>
-                {/* Balance */}
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass">
-                  <Wallet className="h-4 w-4 text-poker-gold" />
-                  <span className="font-semibold text-poker-gold">
-                    ${Number(user?.balance || 0).toFixed(2)}
-                  </span>
-                </div>
-
                 {/* Admin button */}
                 {(user?.role === 'admin' || user?.role === 'editor') && (
                   <Button 
@@ -155,7 +145,6 @@ export function Header() {
                     className="border-poker-green/50 hover:bg-poker-green/10 text-poker-green"
                   >
                     <Link href="/admin">
-                      <Shield className="mr-2 h-4 w-4" />
                       Admin
                     </Link>
                   </Button>
@@ -198,32 +187,27 @@ export function Header() {
                     <DropdownMenuSeparator className="bg-white/10" />
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/dashboard" className="flex items-center">
-                        <Home className="mr-3 h-4 w-4" />
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/rankings" className="flex items-center">
-                        <Trophy className="mr-3 h-4 w-4" />
                         Mis Rankings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/profile" className="flex items-center">
-                        <User className="mr-3 h-4 w-4" />
                         Mi Perfil
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/bonus" className="flex items-center">
-                        <Gift className="mr-3 h-4 w-4" />
                         Mis Bonos
                         <Badge className="ml-auto bg-poker-green text-white">3</Badge>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/settings" className="flex items-center">
-                        <Settings className="mr-3 h-4 w-4" />
                         Configuración
                       </Link>
                     </DropdownMenuItem>
@@ -257,7 +241,7 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] glass border-white/10">
-                {/* Logo en mobile con tipografía original pero sin efectos de brillo */}
+                {/* Logo en mobile sin cursiva y más pequeño */}
                 <div className="flex items-center space-x-3 mb-8">
                   <img 
                     src="/images/supernova-logo.png" 
@@ -267,11 +251,11 @@ export function Header() {
                   <div>
                     <div className="relative">
                       <h2 
-                        className="text-2xl font-black"
+                        className="text-xl font-black"
                         style={{
                           fontFamily: "'Orbitron', 'Bebas Neue', sans-serif",
                           fontWeight: 900,
-                          fontStyle: 'italic',
+                          fontStyle: 'normal',
                           textTransform: 'uppercase',
                           background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #e0e0e0 75%, #ffffff 100%)',
                           WebkitBackgroundClip: 'text',
@@ -303,17 +287,15 @@ export function Header() {
                   </div>
                 </div>
 
-                <nav className="flex flex-col space-y-4">
+                <nav className="flex flex-col space-y-6">
                   {navigation.map((item) => {
-                    const Icon = item.icon;
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center space-x-3 text-lg font-medium hover:text-poker-green transition-colors p-3 rounded-lg hover:bg-white/5"
+                        className="flex items-center text-xl font-medium hover:text-poker-green transition-colors p-3 rounded-lg hover:bg-white/5"
                       >
-                        <Icon className="h-5 w-5" />
                         <span>{item.name}</span>
                       </Link>
                     );
@@ -332,45 +314,35 @@ export function Header() {
                           <div>
                             <p className="font-medium">{user?.username}</p>
                             <p className="text-sm text-muted-foreground">{user?.email}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Wallet className="h-3 w-3 text-poker-gold" />
-                              <span className="text-sm font-semibold text-poker-gold">
-                                ${Number(user?.balance || 0).toFixed(2)}
-                              </span>
-                            </div>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Link
                             href="/dashboard"
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                            className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <Home className="h-5 w-5" />
                             <span>Dashboard</span>
                           </Link>
                           <Link
                             href="/rankings"
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                            className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <Trophy className="h-5 w-5" />
                             <span>Mis Rankings</span>
                           </Link>
                           <Link
                             href="/profile"
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                            className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <User className="h-5 w-5" />
                             <span>Mi Perfil</span>
                           </Link>
                           <Link
                             href="/bonus"
                             onClick={() => setIsOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                            className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <Gift className="h-5 w-5" />
                             <span>Mis Bonos</span>
                             <Badge className="ml-auto bg-poker-green text-white">3</Badge>
                           </Link>
