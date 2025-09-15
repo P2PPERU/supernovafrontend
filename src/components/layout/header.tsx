@@ -24,6 +24,7 @@ const navigation = [
   { name: 'Inicio', href: '/', icon: Home },
   { name: 'Salas', href: '/rooms', icon: Gamepad2 },
   { name: 'Clubs', href: '/clubs', icon: Shield },
+  { name: 'Rankings', href: '/rankings', icon: Trophy }, // ← NUEVO
   { name: 'Ruleta', href: '/roulette', icon: Zap },
   { name: 'Noticias', href: '/news', icon: Newspaper },
 ];
@@ -202,6 +203,12 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/rankings" className="flex items-center">
+                        <Trophy className="mr-3 h-4 w-4" />
+                        Mis Rankings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/profile" className="flex items-center">
                         <User className="mr-3 h-4 w-4" />
                         Mi Perfil
@@ -341,6 +348,14 @@ export function Header() {
                           >
                             <Home className="h-5 w-5" />
                             <span>Dashboard</span>
+                          </Link>
+                          <Link
+                            href="/rankings"
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
+                          >
+                            <Trophy className="h-5 w-5" />
+                            <span>Mis Rankings</span>
                           </Link>
                           <Link
                             href="/profile"
