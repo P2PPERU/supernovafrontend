@@ -1,37 +1,26 @@
+'use client';
+
 import Link from 'next/link';
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 const footerLinks = {
-  juego: [
-    { name: 'Cómo Jugar', href: '/how-to-play' },
-    { name: 'Reglas', href: '/rules' },
-    { name: 'Estrategias', href: '/strategies' },
+  ranking: [
+    { name: 'Rankings Generales', href: '/rankings' },
     { name: 'Torneos', href: '/tournaments' },
-    { name: 'Rankings', href: '/rankings' },
+    { name: 'Leaderboard', href: '/leaderboard' },
   ],
-  club: [
+  noticias: [
+    { name: 'Blog', href: '/blog', badge: 'Nuevo' },
+    { name: 'Noticias', href: '/news' },
+    { name: 'Actualizaciones', href: '/updates' },
+  ],
+  clubs: [
     { name: 'Sobre Nosotros', href: '/about' },
-    { name: 'Contacto', href: '/contact' },
-    { name: 'Blog', href: '/blog' },
     { name: 'Afiliados', href: '/affiliates' },
-    { name: 'Prensa', href: '/press' },
-  ],
-  soporte: [
-    { name: 'Centro de Ayuda', href: '/help' },
-    { name: 'FAQ', href: '/faq' },
-    { name: 'Soporte 24/7', href: '/support' },
-    { name: 'Guías', href: '/guides' },
-    { name: 'API Docs', href: '/api' },
-  ],
-  legal: [
-    { name: 'Términos y Condiciones', href: '/terms' },
-    { name: 'Política de Privacidad', href: '/privacy' },
-    { name: 'Juego Responsable', href: '/responsible-gaming' },
-    { name: 'Cookies', href: '/cookies' },
-    { name: 'Licencias', href: '/licenses' },
+    { name: 'Partners', href: '/partners' },
   ],
 };
 
@@ -42,15 +31,14 @@ const socialLinks = [
   { name: 'YouTube', icon: Youtube, href: '#', followers: '15K' },
 ];
 
-const paymentMethods = [
-  { name: 'Visa', icon: '💳' },
-  { name: 'Mastercard', icon: '💳' },
-  { name: 'PayPal', icon: '💰' },
-  { name: 'Bitcoin', icon: '₿' },
-  { name: 'Ethereum', icon: 'Ξ' },
-];
-
 export function Footer() {
+  const handleWhatsAppClick = () => {
+    const phoneNumber = '+51913828147';
+    const message = encodeURIComponent('¡Hola! Me interesa obtener más información sobre SUPERNOVA.');
+    const whatsappUrl = `https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <footer className="relative bg-black/50 backdrop-blur-xl border-t border-white/10">
       {/* Newsletter section */}
@@ -80,7 +68,7 @@ export function Footer() {
 
       {/* Main footer content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Logo and description */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center space-x-3">
@@ -94,6 +82,33 @@ export function Footer() {
               en el club más prestigioso y seguro.
             </p>
             
+            {/* Contact info - WhatsApp destacado */}
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-poker-green">Contáctanos</p>
+              
+              {/* WhatsApp Button prominente */}
+              <Button
+                onClick={handleWhatsAppClick}
+                className="w-full bg-green-500 hover:bg-green-600 text-white transition-all duration-300 group"
+              >
+                <MessageCircle className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+                WhatsApp: +51 913 828 147
+              </Button>
+              
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href="mailto:support@supernova.com" className="hover:text-poker-green transition-colors">
+                    support@supernova.com
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>Lima, Perú</span>
+                </div>
+              </div>
+            </div>
+
             {/* Social links */}
             <div className="space-y-3">
               <p className="text-sm font-semibold">Síguenos</p>
@@ -118,101 +133,15 @@ export function Footer() {
                 })}
               </div>
             </div>
-
-            {/* Contact info */}
-            <div className="space-y-2 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <a href="mailto:support@supernova.com" className="hover:text-poker-green transition-colors">
-                  support@supernova.com
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>Lima, Perú</span>
-              </div>
-            </div>
           </div>
 
-          {/* Links sections */}
+          {/* Ranking Section */}
           <div>
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <span className="text-poker-green">♠</span> Juego
+              <span className="text-poker-gold">🏆</span> Ranking
             </h3>
             <ul className="space-y-2">
-              {footerLinks.juego.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1 group"
-                  >
-                    <span className="w-0 h-px bg-poker-green group-hover:w-3 transition-all" />
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <span className="text-poker-red">♥</span> Club
-            </h3>
-            <ul className="space-y-2">
-              {footerLinks.club.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1 group"
-                  >
-                    <span className="w-0 h-px bg-poker-red group-hover:w-3 transition-all" />
-                    {link.name}
-                    {link.name === 'Blog' && (
-                      <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
-                        Nuevo
-                      </Badge>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <span className="text-poker-blue">♣</span> Soporte
-            </h3>
-            <ul className="space-y-2">
-              {footerLinks.soporte.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1 group"
-                  >
-                    <span className="w-0 h-px bg-poker-blue group-hover:w-3 transition-all" />
-                    {link.name}
-                    {link.name === 'Soporte 24/7' && (
-                      <span className="relative flex h-2 w-2 ml-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-poker-green opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-poker-green"></span>
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <span className="text-poker-gold">♦</span> Legal
-            </h3>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
+              {footerLinks.ranking.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
@@ -225,36 +154,83 @@ export function Footer() {
               ))}
             </ul>
           </div>
+
+          {/* Noticias Section */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <span className="text-poker-blue">📰</span> Noticias
+            </h3>
+            <ul className="space-y-2">
+              {footerLinks.noticias.map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1 group"
+                  >
+                    <span className="w-0 h-px bg-poker-blue group-hover:w-3 transition-all" />
+                    {link.name}
+                    {link.badge && (
+                      <Badge variant="outline" className="ml-2 text-xs px-1 py-0 border-poker-green text-poker-green">
+                        {link.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Clubs Section */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <span className="text-poker-green">♠</span> Clubs
+            </h3>
+            <ul className="space-y-2">
+              {footerLinks.clubs.map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1 group"
+                  >
+                    <span className="w-0 h-px bg-poker-green group-hover:w-3 transition-all" />
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* Payment methods */}
+        {/* Certification section - Simplified */}
         <div className="mt-12 pt-8 border-t border-white/10">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div>
-              <p className="text-sm text-gray-400 mb-3">Métodos de pago seguros</p>
-              <div className="flex flex-wrap gap-3">
-                {paymentMethods.map((method) => (
-                  <div
-                    key={method.name}
-                    className="glass px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <span className="text-lg">{method.icon}</span>
-                    <span className="text-sm">{method.name}</span>
-                  </div>
-                ))}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <p className="text-sm text-gray-400 mb-3">Certificaciones y Seguridad</p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                <div className="glass px-4 py-2 rounded-lg">
+                  <span className="text-xs">🔒 SSL Seguro</span>
+                </div>
+                <div className="glass px-4 py-2 rounded-lg">
+                  <span className="text-xs">🔞 18+ Juego Responsable</span>
+                </div>
+                <div className="glass px-4 py-2 rounded-lg">
+                  <span className="text-xs">✅ Licencia Oficial</span>
+                </div>
               </div>
             </div>
             
-            <div className="text-right">
-              <p className="text-sm text-gray-400 mb-3">Certificaciones</p>
-              <div className="flex gap-3">
-                <div className="glass px-4 py-2 rounded-lg">
-                  <span className="text-xs">SSL Seguro</span>
-                </div>
-                <div className="glass px-4 py-2 rounded-lg">
-                  <span className="text-xs">18+ Juego Responsable</span>
-                </div>
-              </div>
+            {/* WhatsApp flotante adicional */}
+            <div className="text-center">
+              <p className="text-sm text-gray-400 mb-3">Soporte Inmediato</p>
+              <Button
+                onClick={handleWhatsAppClick}
+                variant="outline"
+                size="sm"
+                className="border-green-500 text-green-400 hover:bg-green-500 hover:text-white transition-all"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Contactar WhatsApp
+              </Button>
             </div>
           </div>
         </div>
@@ -266,25 +242,24 @@ export function Footer() {
               © {new Date().getFullYear()} Supernova. Todos los derechos reservados.
             </p>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link href="/sitemap" className="hover:text-white transition-colors">
-                Mapa del sitio
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Términos y Condiciones
               </Link>
               <span className="text-gray-700">•</span>
-              <Link href="/careers" className="hover:text-white transition-colors flex items-center gap-1">
-                Trabaja con nosotros
-                <Badge className="bg-poker-green text-white text-xs px-1 py-0">
-                  Hiring
-                </Badge>
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Política de Privacidad
               </Link>
               <span className="text-gray-700">•</span>
-              <Link href="/partners" className="hover:text-white transition-colors">
-                Partners
+              <Link href="/responsible-gaming" className="hover:text-white transition-colors">
+                Juego Responsable
               </Link>
             </div>
           </div>
           
           <p className="text-center text-xs text-gray-600 mt-6">
             El juego puede ser adictivo. Juega responsablemente. Solo para mayores de 18 años.
+            <br />
+            Para consultas inmediatas, contáctanos por WhatsApp: +51 913 828 147
           </p>
         </div>
       </div>

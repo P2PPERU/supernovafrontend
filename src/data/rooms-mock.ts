@@ -27,15 +27,15 @@ export const roomsMockData: Room[] = [
         '/images/rooms/suprema-2.jpg',
         '/images/rooms/suprema-3.jpg'
       ],
-      logo: '/images/rooms/suprema-logo.png'  // ✅ Aquí está tu logo
+      logo: '/images/rooms/suprema-logo.png'
     },
     bonus: {
       welcome: {
-        amount: 2500,
-        currency: 'USD',
+        amount: 1000,
+        currency: 'S/',
         percentage: 100,
-        maxBonus: 2500,
-        description: 'Bono VIP del 100% hasta $2500 + giros de ruleta gratis'
+        maxBonus: 1000,
+        description: 'Bono VIP del 100% hasta S/1000'
       },
       deposit: {
         percentage: 70,
@@ -47,10 +47,10 @@ export const roomsMockData: Room[] = [
         frequency: 'daily'
       },
       specialOffers: [
-        '12 giros diarios en la ruleta premium garantizados',
-        'Acceso VIP a torneos exclusivos con $50K GTD',
+        'Acceso VIP a torneos exclusivos con S/50K GTD',
         'Rakeback diario del 70% sin restricciones',
-        'Bono mensual de hasta $2,500 adicionales'
+        'Bono mensual de hasta S/1,000 adicionales',
+        'Soporte prioritario 24/7'
       ]
     },
     rakeback: {
@@ -65,17 +65,17 @@ export const roomsMockData: Room[] = [
         {
           level: 'Gold',
           percentage: 60,
-          requirements: '$1000 en rake mensual'
+          requirements: 'S/1000 en rake mensual'
         },
         {
           level: 'Platinum',
           percentage: 65,
-          requirements: '$3000 en rake mensual'
+          requirements: 'S/3000 en rake mensual'
         },
         {
           level: 'Diamond',
           percentage: 70,
-          requirements: '$8000 en rake mensual'
+          requirements: 'S/8000 en rake mensual'
         }
       ],
       frequency: 'instant',
@@ -91,27 +91,20 @@ export const roomsMockData: Room[] = [
       },
       {
         id: 'f2',
-        icon: 'Gamepad2',
-        title: 'Ruleta Premium',
-        description: '12 giros diarios garantizados con premios en efectivo',
-        highlighted: true
-      },
-      {
-        id: 'f3',
         icon: 'Trophy',
         title: 'Torneos GTD',
         description: 'Torneos garantizados exclusivos para miembros VIP',
         highlighted: true
       },
       {
-        id: 'f4',
+        id: 'f3',
         icon: 'Headphones',
         title: 'Soporte VIP',
         description: 'Atención prioritaria 24/7 con agentes especializados',
         highlighted: true
       },
       {
-        id: 'f5',
+        id: 'f4',
         icon: 'Zap',
         title: 'Pagos Express',
         description: 'Retiros procesados en menos de 2 horas',
@@ -160,15 +153,14 @@ export const roomsMockData: Room[] = [
     },
     pros: [
       'El rakeback más alto del mercado (70%)',
-      'Giros diarios garantizados en ruleta premium',
-      'Bonos mensuales de hasta $2,500',
+      'Bonos mensuales de hasta S/1,000',
       'Retiros express en menos de 2 horas',
       'Acceso VIP exclusivo por SUPERNOVA',
       'Soporte prioritario especializado'
     ],
     cons: [
       'Acceso exclusivo solo por SUPERNOVA',
-      'Depósito mínimo más alto ($50)',
+      'Depósito mínimo más alto (S/50)',
       'Enfocado en jugadores serios y VIP'
     ],
     createdAt: '2024-01-01T00:00:00Z',
@@ -184,12 +176,12 @@ export const roomsMockData: Room[] = [
       from: 'from-purple-600',
       to: 'to-purple-800'
     },
-    description: 'X-POKER es la sala premium líder en Latinoamérica, ofreciendo la mejor experiencia de poker online con tecnología de punta y seguridad garantizada. Con más de 10 años en el mercado, nos hemos consolidado como la opción preferida de jugadores profesionales y recreativos.',
-    shortDescription: 'Especialistas en torneos garantizados',
+    description: 'X-POKER es la sala premium especialista en mesas recreativas con jugadores casuales. Con tecnología de punta y mesas con ambiente relajado, es ideal para jugadores que buscan acción constante contra oponentes recreativos.',
+    shortDescription: 'Mesas recreativas y acción constante',
     rating: 4.8,
     totalReviews: 2341,
     activePlayers: '980',
-    badge: 'TORNEOS TOP',
+    badge: 'RECREATIVO',
     badgeColor: 'bg-purple-500',
     featured: true,
     order: 1,
@@ -200,18 +192,18 @@ export const roomsMockData: Room[] = [
         '/images/rooms/xpoker-2.jpg',
         '/images/rooms/xpoker-3.jpg'
       ],
-      logo: '/images/rooms/xpoker-logo.png'  // ✅ Logo X-POKER
+      logo: '/images/rooms/xpoker-logo.png'
     },
     bonus: {
       welcome: {
-        amount: 1800,
-        currency: 'USD',
+        amount: 1000,
+        currency: 'S/',
         percentage: 100,
-        maxBonus: 1800,
-        description: 'Bono del 100% hasta $1800 + 8 giros diarios'
+        maxBonus: 1000,
+        description: 'Bono del 100% hasta S/1000'
       },
       deposit: {
-        percentage: 60,
+        percentage: 70,
         maxAmount: 600,
         minDeposit: 20
       },
@@ -220,14 +212,14 @@ export const roomsMockData: Room[] = [
         frequency: 'weekly'
       },
       specialOffers: [
-        '8 giros diarios en ruleta garantizados',
-        'Torneos exclusivos premium cada semana',
+        'Mesas recreativas con jugadores casuales',
         'Fast fold poker con action constante',
-        'Bono mensual de hasta $1,800'
+        'Bono mensual de hasta S/1,000',
+        'Acceso prioritario a mesas suaves'
       ]
     },
     rakeback: {
-      percentage: 60,
+      percentage: 70,
       type: 'progressive',
       tiers: [
         {
@@ -238,34 +230,34 @@ export const roomsMockData: Room[] = [
         {
           level: 'Plata',
           percentage: 45,
-          requirements: '$500 en rake mensual'
+          requirements: 'S/500 en rake mensual'
         },
         {
           level: 'Oro',
-          percentage: 55,
-          requirements: '$2000 en rake mensual'
+          percentage: 60,
+          requirements: 'S/2000 en rake mensual'
         },
         {
           level: 'Platino',
-          percentage: 60,
-          requirements: '$5000 en rake mensual'
+          percentage: 70,
+          requirements: 'S/5000 en rake mensual'
         }
       ],
       frequency: 'daily',
-      description: 'Rakeback diario progresivo hasta 60%'
+      description: 'Rakeback diario progresivo hasta 70%'
     },
     features: [
       {
         id: 'f1',
-        icon: 'Trophy',
-        title: 'Torneos Premium',
-        description: 'Más de 100 torneos diarios con garantizados millonarios',
+        icon: 'Users',
+        title: 'Mesas Recreativas',
+        description: 'Jugadores casuales y ambiente relajado para maximizar ganancias',
         highlighted: true
       },
       {
         id: 'f2',
         icon: 'Zap',
-        title: 'Fast Fold',
+        title: 'NLH Todos los stakes',
         description: 'Poker de acción rápida para maximizar las manos',
         highlighted: true
       },
@@ -332,15 +324,15 @@ export const roomsMockData: Room[] = [
       uptime: 99.9
     },
     pros: [
-      'Excelente programa de torneos garantizados',
+      'Mesas recreativas con jugadores casuales',
       'Fast fold poker único en el mercado',
       'Pagos en menos de 24 horas',
       'Software estable y seguro',
-      'Rakeback progresivo hasta 60%'
+      'Rakeback progresivo hasta 70%'
     ],
     cons: [
       'Requiere verificación KYC completa',
-      'Menos variedad en cash games',
+      'Menos variedad en torneos high stakes',
       'Interfaz puede ser compleja para principiantes'
     ],
     createdAt: '2024-01-01T00:00:00Z',
@@ -372,15 +364,15 @@ export const roomsMockData: Room[] = [
         '/images/rooms/clubgg-2.jpg',
         '/images/rooms/clubgg-3.jpg'
       ],
-      logo: '/images/rooms/clubgg-logo.png'  // ✅ Logo CLUBGG
+      logo: '/images/rooms/clubgg-logo.png'
     },
     bonus: {
       welcome: {
-        amount: 1500,
-        currency: 'USD',
+        amount: 1000,
+        currency: 'S/',
         percentage: 100,
-        maxBonus: 1500,
-        description: 'Bono del 100% hasta $1500 + 6 giros diarios'
+        maxBonus: 1000,
+        description: 'Bono del 100% hasta S/1000'
       },
       deposit: {
         percentage: 55,
@@ -389,17 +381,17 @@ export const roomsMockData: Room[] = [
       },
       noDeposit: {
         amount: 25,
-        description: 'Bono gratis de $25 sin necesidad de depósito'
+        description: 'Bono gratis de S/25 sin necesidad de depósito'
       },
       reload: {
         percentage: 35,
         frequency: 'weekly'
       },
       specialOffers: [
-        '6 giros diarios en ruleta garantizados',
-        'Freerolls diarios con $1000 garantizados',
+        'Freerolls diarios con S/1000 garantizados',
         'Puntos dobles los fines de semana',
-        'Bono mensual de hasta $1,500'
+        'Bono mensual de hasta S/1,000',
+        'Programa de lealtad con premios'
       ]
     },
     rakeback: {
@@ -493,12 +485,12 @@ export const roomsMockData: Room[] = [
       from: 'from-green-600',
       to: 'to-green-800'
     },
-    description: 'PPPOKER revoluciona el poker móvil con su aplicación galardonada. Diseñada específicamente para dispositivos móviles, ofrece la mejor experiencia de juego en tu smartphone o tablet.',
-    shortDescription: 'Experiencia móvil optimizada',
+    description: 'PPPOKER revoluciona el poker móvil con su aplicación galardonada y las mejores mesas de Omaha del mercado. Diseñada específicamente para dispositivos móviles, ofrece la mejor experiencia de Omaha Hi/Lo en tu smartphone.',
+    shortDescription: 'Especialistas en Omaha y móvil',
     rating: 4.6,
     totalReviews: 1823,
     activePlayers: '750',
-    badge: 'MEJOR APP',
+    badge: 'OMAHA PRO',
     badgeColor: 'bg-green-500',
     featured: true,
     order: 3,
@@ -509,18 +501,18 @@ export const roomsMockData: Room[] = [
         '/images/rooms/pppoker-2.jpg',
         '/images/rooms/pppoker-3.jpg'
       ],
-      logo: '/images/rooms/pppoker-logo.jpg'  // ✅ Logo PPPOKER
+      logo: '/images/rooms/pppoker-logo.jpg'
     },
     bonus: {
       welcome: {
-        amount: 1200,
-        currency: 'USD',
+        amount: 1000,
+        currency: 'S/',
         percentage: 100,
-        maxBonus: 1200,
-        description: 'Bono móvil del 100% hasta $1200 + 7 giros diarios'
+        maxBonus: 1000,
+        description: 'Bono móvil del 100% hasta S/1000'
       },
       deposit: {
-        percentage: 58,
+        percentage: 70,
         maxAmount: 400,
         minDeposit: 10
       },
@@ -529,14 +521,14 @@ export const roomsMockData: Room[] = [
         frequency: 'daily'
       },
       specialOffers: [
-        '7 giros diarios en ruleta móvil',
+        'Mejores mesas de Omaha del mercado',
         'Misiones diarias con premios en efectivo',
-        'Programa VIP con beneficios exclusivos',
-        'Bono mensual de hasta $1,200'
+        'Bono mensual de hasta S/1,000',
+        'Programa VIP con beneficios exclusivos'
       ]
     },
     rakeback: {
-      percentage: 58,
+      percentage: 70,
       type: 'vip-based',
       tiers: [
         {
@@ -551,29 +543,29 @@ export const roomsMockData: Room[] = [
         },
         {
           level: 'VIP 3',
-          percentage: 48,
+          percentage: 55,
           requirements: '500 puntos VIP'
         },
         {
           level: 'VIP 4',
-          percentage: 58,
+          percentage: 70,
           requirements: '2000 puntos VIP'
         }
       ],
       frequency: 'instant',
-      description: 'Sistema VIP con rakeback hasta 58%'
+      description: 'Sistema VIP con rakeback hasta 70%'
     },
     features: [
       {
         id: 'f1',
-        icon: 'Smartphone',
-        title: 'Mejor App',
-        description: 'Diseñado exclusivamente para móviles',
+        icon: 'Spades',
+        title: 'Omaha Premium',
+        description: 'Las mejores mesas de Omaha Hi/Lo disponibles',
         highlighted: true
       },
       {
         id: 'f2',
-        icon: 'Zap',
+        icon: 'Smartphone',
         title: 'Mobile First',
         description: 'Experiencia optimizada para dispositivos móviles',
         highlighted: true
@@ -624,11 +616,11 @@ export const roomsMockData: Room[] = [
       uptime: 99.8
     },
     pros: [
-      'Mejor experiencia móvil del mercado',
+      'Mejores mesas de Omaha del mercado',
+      'Mejor experiencia móvil disponible',
       'Interfaz intuitiva y moderna',
-      'Torneos rápidos ideales para móvil',
       'Sistema de clubs y comunidades',
-      'Rakeback competitivo hasta 58%'
+      'Rakeback competitivo hasta 70%'
     ],
     cons: [
       'Enfocado principalmente en móvil',
@@ -664,15 +656,15 @@ export const roomsMockData: Room[] = [
         '/images/rooms/wpt-2.jpg',
         '/images/rooms/wpt-3.jpg'
       ],
-      logo: '/images/rooms/wpt-logo.jpg'  // ✅ Logo WPT
+      logo: '/images/rooms/wpt-logo.jpg'
     },
     bonus: {
       welcome: {
-        amount: 900,
-        currency: 'USD',
+        amount: 1000,
+        currency: 'S/',
         percentage: 100,
-        maxBonus: 900,
-        description: 'Bono profesional hasta $900 + 5 giros semanales'
+        maxBonus: 1000,
+        description: 'Bono profesional hasta S/1000'
       },
       deposit: {
         percentage: 45,
@@ -684,10 +676,10 @@ export const roomsMockData: Room[] = [
         frequency: 'monthly'
       },
       specialOffers: [
-        '5 giros semanales en ruleta premium',
         'Satélites para eventos WPT presenciales',
         'Mesas exclusivas con pros del WPT',
-        'Bono mensual de hasta $900'
+        'Bono mensual de hasta S/1,000',
+        'Acceso a eventos de alto prestigio'
       ]
     },
     rakeback: {
@@ -707,7 +699,7 @@ export const roomsMockData: Room[] = [
       {
         id: 'f2',
         icon: 'DollarSign',
-        title: 'High Stakes',
+        title: 'Torneos con Overlays',
         description: 'Las mesas con límites más altos',
         highlighted: true
       },
@@ -766,7 +758,7 @@ export const roomsMockData: Room[] = [
     cons: [
       'Enfocado en jugadores experimentados',
       'Depósito mínimo más alto',
-      'Menos promociones frecuentes'
+      'Rakeback más conservador (45%)'
     ],
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-12-15T00:00:00Z'

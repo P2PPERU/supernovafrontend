@@ -1049,6 +1049,14 @@ function QuickActions() {
       description: 'Gestionar usuarios'
     },
     { 
+      title: 'Afiliados', 
+      href: '/admin/affiliates', 
+      icon: Building2, 
+      color: 'purple',
+      count: null,
+      description: 'Gestionar agentes'
+    },
+    { 
       title: 'Clubs', 
       href: '/admin/clubs', 
       icon: Building2, 

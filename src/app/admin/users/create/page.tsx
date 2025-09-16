@@ -19,7 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useCreateUser, useAvailableAffiliates } from '@/hooks/admin/useUsers';
-import { ArrowLeft, Eye, EyeOff, UserPlus, Users, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, UserPlus, Users, AlertCircle, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -47,6 +47,8 @@ export default function CreateUserPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'agent' | 'editor' | 'client'>('client');
   const [useDirectTable, setUseDirectTable] = useState(false);
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string>('');
+  const [manualAffiliateCode, setManualAffiliateCode] = useState<string>('');
   
   const createUser = useCreateUser();
   const { data: affiliatesData, isLoading: loadingAffiliates } = useAvailableAffiliates();
@@ -69,28 +71,49 @@ export default function CreateUserPage() {
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       role: 'client',
       balance: '0',
       assignToDirectTable: false,
+      affiliateId: '',
+      affiliateCode: '',
     },
   });
 
   const watchedRole = watch('role');
-  const watchedAffiliateId = watch('affiliateId');
-  const watchedAffiliateCode = watch('affiliateCode');
 
   useEffect(() => {
     setSelectedRole(watchedRole);
-  }, [watchedRole]);
+    // Limpiar datos de afiliado al cambiar rol
+    if (watchedRole !== 'client') {
+      setSelectedAffiliateId('');
+      setManualAffiliateCode('');
+      setUseDirectTable(false);
+      setValue('affiliateId', '');
+      setValue('affiliateCode', '');
+    }
+  }, [watchedRole, setValue]);
 
-  // Si es agente, se crea automáticamente su perfil de afiliado
+  // Es agente - se crea automáticamente su perfil de afiliado
   const isCreatingAgent = selectedRole === 'agent';
   
   // Solo los clientes necesitan asignación a agente (opcional)
   const needsAffiliateAssignment = selectedRole === 'client';
+
+  // Función para limpiar selección de afiliado
+  const clearAffiliateSelection = () => {
+    setSelectedAffiliateId('');
+    setValue('affiliateId', '');
+  };
+
+  // Función para limpiar código manual
+  const clearManualCode = () => {
+    setManualAffiliateCode('');
+    setValue('affiliateCode', '');
+  };
 
   const onSubmit = (data: CreateUserFormData) => {
     // Preparar datos según el rol y configuración
@@ -99,8 +122,8 @@ export default function CreateUserPage() {
       balance: parseFloat(data.balance || '0'),
       // Solo incluir datos de afiliado para clientes
       ...(needsAffiliateAssignment && !useDirectTable && {
-        affiliateId: data.affiliateId,
-        affiliateCode: data.affiliateCode,
+        affiliateId: selectedAffiliateId || undefined,
+        affiliateCode: manualAffiliateCode || undefined,
       }),
     };
 
@@ -331,6 +354,8 @@ export default function CreateUserPage() {
                     onCheckedChange={(checked) => {
                       setUseDirectTable(checked);
                       if (checked) {
+                        setSelectedAffiliateId('');
+                        setManualAffiliateCode('');
                         setValue('affiliateId', '');
                         setValue('affiliateCode', '');
                       }
@@ -350,45 +375,105 @@ export default function CreateUserPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="affiliateId">Seleccionar Agente</Label>
-                        <Select
-                          value={watchedAffiliateId || ''}
-                          onValueChange={(value) => {
-                            setValue('affiliateId', value);
-                            if (value) setValue('affiliateCode', '');
-                          }}
-                          disabled={loadingAffiliates}
-                        >
-                          <SelectTrigger id="affiliateId">
-                            <SelectValue placeholder={loadingAffiliates ? "Cargando..." : "Seleccionar agente"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Sin agente asignado</SelectItem>
-                            {transformedAffiliates.map((affiliate) => (
-                              <SelectItem key={affiliate.id} value={affiliate.id}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{affiliate.displayName || affiliate.username}</span>
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {affiliate.affiliateCode}
-                                  </Badge>
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedAffiliateId}
+                            onValueChange={(value) => {
+                              if (value === 'none') {
+                                setSelectedAffiliateId('');
+                                setValue('affiliateId', '');
+                              } else {
+                                setSelectedAffiliateId(value);
+                                setValue('affiliateId', value);
+                                // Limpiar código manual si se selecciona de la lista
+                                setManualAffiliateCode('');
+                                setValue('affiliateCode', '');
+                              }
+                            }}
+                            disabled={loadingAffiliates || !!manualAffiliateCode}
+                          >
+                            <SelectTrigger id="affiliateId">
+                              <SelectValue placeholder={loadingAffiliates ? "Cargando..." : "Seleccionar agente"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                <div className="flex items-center gap-2">
+                                  <X className="h-4 w-4" />
+                                  Sin agente asignado
                                 </div>
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              {transformedAffiliates.map((affiliate) => (
+                                <SelectItem key={affiliate.id} value={affiliate.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{affiliate.displayName || affiliate.username}</span>
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      {affiliate.affiliateCode}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          {selectedAffiliateId && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Agente seleccionado
+                              </Badge>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearAffiliateSelection}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Quitar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="affiliateCode">O Código de Afiliado</Label>
-                        <Input
-                          id="affiliateCode"
-                          placeholder="INKAS1234"
-                          {...register('affiliateCode')}
-                          disabled={!!watchedAffiliateId}
-                          onChange={(e) => {
-                            setValue('affiliateCode', e.target.value);
-                            if (e.target.value) setValue('affiliateId', '');
-                          }}
-                        />
+                        <div className="space-y-2">
+                          <Input
+                            id="affiliateCode"
+                            placeholder="INKAS1234"
+                            value={manualAffiliateCode}
+                            disabled={!!selectedAffiliateId}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setManualAffiliateCode(value);
+                              setValue('affiliateCode', value);
+                              // Limpiar selección de lista si se ingresa código manual
+                              if (value) {
+                                setSelectedAffiliateId('');
+                                setValue('affiliateId', '');
+                              }
+                            }}
+                          />
+                          
+                          {manualAffiliateCode && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Código ingresado
+                              </Badge>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearManualCode}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Limpiar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        
                         <p className="text-xs text-muted-foreground">
                           Deja vacío para no asignar agente
                         </p>

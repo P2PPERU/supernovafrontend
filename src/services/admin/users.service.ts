@@ -13,6 +13,7 @@ interface UserStats {
   totalUsers: number;
   activeUsers: number;
   inactiveUsers: number;
+  newUsersToday: number;
   byRole: Array<{ role: string; count: number }>;
   recentUsers: User[];
   growthMetrics: {
@@ -27,20 +28,26 @@ interface CreateUserData {
   email: string;
   password: string;
   role?: string;
-  parentAgentId?: string;
   firstName?: string;
   lastName?: string;
   phone?: string;
   balance?: number;
+  // Campos de afiliación
+  affiliateId?: string;
+  affiliateCode?: string;
 }
 
 interface UpdateUserData {
   firstName?: string;
   lastName?: string;
+  email?: string;
   phone?: string;
   isActive?: boolean;
   role?: string;
-  newPassword?: string;
+  balance?: number;
+  // Campos de afiliación para clientes
+  affiliateId?: string;
+  affiliateCode?: string;
 }
 
 interface BalanceOperation {
@@ -48,7 +55,7 @@ interface BalanceOperation {
   operation: 'set' | 'add' | 'subtract';
 }
 
-// Nuevas interfaces para afiliados
+// Interfaces para afiliados
 interface AffiliateProfile {
   id: string;
   user_id: string;
@@ -63,18 +70,28 @@ interface AffiliateProfile {
     username: string;
     email: string;
     profile_data: {
-      firstName: string;
-      lastName: string;
+      firstName?: string;
+      lastName?: string;
+      avatar?: string;
     };
+    created_at?: string;
   };
 }
 
 interface AvailableAffiliate {
   id: string;
   username: string;
-  displayName: string;
+  displayName?: string;
   affiliateCode: string;
   customUrl?: string;
+  profile_data?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  affiliateProfile?: {
+    affiliate_code: string;
+    custom_url?: string;
+  };
 }
 
 interface AffiliationHistory {
@@ -117,6 +134,11 @@ export const adminUsersService = {
     return response.data;
   },
 
+  updateUser: async (id: string, data: UpdateUserData): Promise<{ success: boolean; user: User }> => {
+    const response = await api.put(`/users/${id}`, data);
+    return response.data;
+  },
+
   updateUserStatus: async (id: string, isActive: boolean) => {
     const response = await api.put(`/users/${id}/status`, { isActive });
     return response.data;
@@ -142,7 +164,7 @@ export const adminUsersService = {
     return response.data;
   },
 
-  // Nuevas funciones para afiliados
+  // Funciones para afiliados
   getAffiliateProfiles: async (filters: UserFilters = {}): Promise<PaginatedResponse<AffiliateProfile>> => {
     const response = await api.get('/admin/affiliates', { params: filters });
     return response.data;
@@ -188,15 +210,6 @@ export const adminUsersService = {
   getAffiliateStats: async (agentId?: string) => {
     const url = agentId ? `/admin/affiliates/${agentId}/stats` : '/admin/affiliates/stats';
     const response = await api.get(url);
-    return response.data;
-  },
-
-  // Crear usuario con asignación de agente
-  createUserWithAgent: async (data: CreateUserData & {
-    affiliateId?: string;
-    affiliateCode?: string;
-  }): Promise<{ success: boolean; user: User }> => {
-    const response = await api.post('/auth/register', data);
     return response.data;
   },
 

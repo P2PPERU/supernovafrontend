@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, PlayCircle, Star, Users, Trophy, DollarSign } from 'lucide-react';
+import { ArrowRight, PlayCircle, Star, Users, Trophy, DollarSign, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { motion } from 'framer-motion';
 
@@ -19,6 +19,13 @@ export function HeroSection() {
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleWhatsAppClick = () => {
+    const phoneNumber = '+51913828147';
+    const message = encodeURIComponent('¡Hola! Me interesa conocer más sobre los tratos de poker disponibles.');
+    const whatsappUrl = `https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <section className="relative min-h-[90vh] flex items-center animated-bg">
@@ -38,6 +45,31 @@ export function HeroSection() {
         </div>
       </div>
 
+      {/* WhatsApp Button - Floating */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className="fixed bottom-6 right-6 z-50"
+      >
+        <Button
+          onClick={handleWhatsAppClick}
+          className="bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 p-0 shadow-2xl hover:shadow-green-500/25 transition-all duration-300 group"
+          title="Contactar por WhatsApp"
+        >
+          <MessageCircle className="h-7 w-7 group-hover:scale-110 transition-transform duration-300" />
+          
+          {/* Tooltip */}
+          <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
+            Contactar por WhatsApp
+            <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-900"></div>
+          </div>
+        </Button>
+        
+        {/* Pulse animation ring */}
+        <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20"></div>
+      </motion.div>
+
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-background" />
       
@@ -54,7 +86,7 @@ export function HeroSection() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-poker-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-poker-green"></span>
             </span>
-            <span className="text-sm font-medium">+500 agentes ahora</span>
+            <span className="text-sm font-medium">+100 agentes ahora</span>
           </motion.div>
 
           {/* Main heading */}
@@ -85,7 +117,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
           >
             {isAuthenticated ? (
               <>
@@ -137,6 +169,23 @@ export function HeroSection() {
             )}
           </motion.div>
 
+          {/* WhatsApp CTA adicional */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="mb-12"
+          >
+            <Button
+              onClick={handleWhatsAppClick}
+              variant="outline"
+              className="glass border-green-500/50 hover:bg-green-500/10 text-green-400 hover:text-green-300 transition-all duration-300"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              ¿Necesitas ayuda? Contáctanos por WhatsApp
+            </Button>
+          </motion.div>
+
           {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -151,7 +200,7 @@ export function HeroSection() {
             </div>
             <div className="glass rounded-lg p-6 card-hover">
               <DollarSign className="h-8 w-8 text-poker-gold mx-auto mb-2" />
-              <div className="text-3xl font-bold mb-1">$50K</div>
+              <div className="text-3xl font-bold mb-1">S/100K</div>
               <div className="text-sm text-gray-400">Premios Mensuales</div>
             </div>
             <div className="glass rounded-lg p-6 card-hover">

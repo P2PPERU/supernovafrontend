@@ -248,14 +248,16 @@ export default function RoomsPage() {
                         <span className="font-bold text-poker-gold">
                           {room.bonus?.specialOffers?.[0]?.includes('giros') 
                             ? room.bonus.specialOffers[0].split(' ')[0] + ' Giros'
-                            : '5 Giros'}
+                            : 'Giros Gratis'}
                         </span>
                       </div>
                     </div>
                     <div className="p-4 rounded-xl bg-gradient-to-r from-poker-purple/20 to-poker-purple/10 border border-poker-purple/20">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-poker-purple">Bono Max</span>
-                        <span className="font-bold text-poker-purple">${room.bonus?.welcome?.maxBonus?.toLocaleString() || '0'}</span>
+                        <span className="text-sm font-medium text-poker-purple">Bono</span>
+                        <span className="font-bold text-poker-purple">
+                          {room.bonus?.welcome?.currency || 'S/'}1,000
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -344,7 +346,7 @@ export default function RoomsPage() {
                 <div className="p-6 rounded-xl bg-white/5 text-center">
                   <DollarSign className="h-10 w-10 text-poker-purple mx-auto mb-3" />
                   <h4 className="font-semibold mb-2">Bonos Máximos</h4>
-                  <p className="text-sm text-gray-400">Hasta ${Math.max(...rooms.map(r => r.bonus?.welcome?.maxBonus || 0)).toLocaleString()}</p>
+                  <p className="text-sm text-gray-400">Hasta S/1,000 en cada sala</p>
                 </div>
               </div>
               

@@ -13,7 +13,7 @@ const testimonials = [
     avatar: 'PS',
     rating: 5,
     content: 'Llevo 8 meses en SUPERNOVA y el rakeback del 55% me ha dado mucha más libertad. Las mesas están siempre activas y el software va perfecto.',
-    achievement: 'Rakeback mensual: $850',
+    achievement: 'Rakeback mensual: S/850',
   },
   {
     id: 2,
@@ -36,11 +36,11 @@ const testimonials = [
   {
     id: 4,
     nick: 'TourneyAce22',
-    role: 'SNG Regular',
+    role: 'MTT Regular',
     avatar: 'TA',
     rating: 5,
-    content: 'Los sit and go de $20-$50 tienen muy buen tráfico. Me gusta que puedo jugar 6-8 mesas sin problemas. Los pagos llegan en unos minutos.',
-    achievement: '18 victorias en SNGs este mes',
+    content: 'Los MTT de S/20-S/50 tienen muy buen tráfico. Me gusta que puedo jugar 6-8 mesas sin problemas. Los pagos llegan en unos minutos.',
+    achievement: '18 victorias en mtt este mes',
   },
   {
     id: 5,
@@ -48,7 +48,7 @@ const testimonials = [
     role: 'Jugador Recreativo',
     avatar: 'MS',
     rating: 5,
-    content: 'Perfecto para alguien como yo que juega por diversión. Los stakes de $1-$5 son relajados y la ruleta diaria me da fichas extra para jugar más.',
+    content: 'Perfecto para alguien como yo que juega por diversión. Los stakes de S/1-S/5 son relajados y la ruleta diaria me da fichas extra para jugar más.',
     achievement: '12 giros ganados esta semana',
   },
   {
@@ -58,7 +58,7 @@ const testimonials = [
     avatar: 'HR',
     rating: 5,
     content: 'Las mesas de NL500+ tienen buena acción los fines de semana. El rake es competitivo y nunca he tenido problemas con los cashouts grandes.',
-    achievement: 'Sesión ganadora: $3,200',
+    achievement: 'Sesión ganadora: S/3,200',
   },
 ];
 
