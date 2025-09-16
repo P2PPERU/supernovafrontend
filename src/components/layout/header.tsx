@@ -201,14 +201,13 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link href="/bonus" className="flex items-center">
-                        Mis Bonos
-                        <Badge className="ml-auto bg-poker-green text-white">3</Badge>
+                      <Link href="/news" className="flex items-center">
+                        Noticias
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link href="/settings" className="flex items-center">
-                        Configuración
+                      <Link href="/roulette" className="flex items-center">
+                        Ruleta
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-white/10" />
@@ -339,12 +338,18 @@ export function Header() {
                             <span>Mi Perfil</span>
                           </Link>
                           <Link
-                            href="/bonus"
+                            href="/news"
                             onClick={() => setIsOpen(false)}
                             className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
                           >
-                            <span>Mis Bonos</span>
-                            <Badge className="ml-auto bg-poker-green text-white">3</Badge>
+                            <span>Noticias</span>
+                          </Link>
+                          <Link
+                            href="/roulette"
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center p-3 rounded-lg hover:bg-white/5 transition-colors"
+                          >
+                            <span>Ruleta</span>
                           </Link>
                           <button
                             onClick={() => {

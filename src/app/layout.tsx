@@ -4,8 +4,9 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { AuthDebug } from '@/components/debug/auth-debug';
-import { AdminFloatButton } from '@/components/admin/float-button';
+// import { AuthDebug } from '@/components/debug/auth-debug'; // Comentado para ocultar debug
+// import { AdminFloatButton } from '@/components/admin/float-button'; // Comentado para ocultar botón flotante
+import { WhatsAppFloatButton } from '@/components/whatsapp/float-button';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   description: 'Únete a las mejores Uniones de poker online con torneos, ruleta y rankings',
   keywords: 'poker, casino, ruleta, torneos, rankings',
   icons: {
-    icon: '/supernova-logo.png', // ✅ favicon personalizado
+    icon: '/supernova-logo.png',
   },
 };
 
@@ -67,8 +68,9 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <AdminFloatButton />
-          <AuthDebug />
+          <WhatsAppFloatButton />
+          {/* <AdminFloatButton /> */} {/* Comentado para ocultar botón admin - descomentar si se necesita */}
+          {/* <AuthDebug /> */} {/* Comentado para ocultar debug - descomentar si se necesita */}
         </Providers>
       </body>
     </html>

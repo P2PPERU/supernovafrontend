@@ -21,7 +21,7 @@ export function Providers({ children }: ProvidersProps) {
       >
         {children}
         <Toaster position="top-right" richColors />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {/* <ReactQueryDevtools initialIsOpen={false} /> */} {/* Comentado para ocultar devtools - descomentar si se necesita */}
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { Shield } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,10 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function AdminFloatButton() {
   const { user } = useAuthStore();
   
-  if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
-    return null;
-  }
+  const handleWhatsAppClick = () => {
+    window.open('https://wa.me/51913828147', '_blank');
+  };
 
+  // Convertir el botón admin en botón de WhatsApp temporalmente
   return (
     <AnimatePresence>
       <motion.div
@@ -23,12 +23,11 @@ export function AdminFloatButton() {
       >
         <Button
           size="lg"
-          className="rounded-full w-16 h-16 shadow-lg bg-poker-green hover:bg-poker-darkGreen"
-          asChild
+          onClick={handleWhatsAppClick}
+          className="rounded-full w-16 h-16 shadow-lg bg-green-500 hover:bg-green-600"
+          title="Contactar por WhatsApp"
         >
-          <Link href="/admin" title="Panel Administrativo">
-            <Shield className="h-6 w-6" />
-          </Link>
+          <MessageCircle className="h-6 w-6" />
         </Button>
       </motion.div>
     </AnimatePresence>

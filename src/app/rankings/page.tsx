@@ -401,7 +401,7 @@ export default function RankingsPage() {
             </Badge>
             
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Hall de la <span className="gradient-text">Fama</span>
+              TOPS<span className="gradient-text">JUGADORES</span>
             </h1>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-4">
               Los mejores jugadores compiten por la gloria eterna en nuestras mesas de poker
