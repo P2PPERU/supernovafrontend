@@ -168,7 +168,7 @@ export function NewsFilters({ filters, onFiltersChange, showAdvanced = false }: 
                   Rango de fechas
                 </Label>
                 <DatePickerWithRange
-                  date={filters.dateRange}
+                  date={filters.dateRange as any}
                   onDateChange={(range) => onFiltersChange({ ...filters, dateRange: range, page: 1 })}
                 />
               </div>

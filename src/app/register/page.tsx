@@ -188,7 +188,7 @@ export default function RegisterPage() {
               Únete a SUPERNOVA
             </CardTitle>
             <CardDescription className="text-lg">
-              Los mejores tratos de poker te están esperando
+              Los mejores acuerdos de poker te están esperando
             </CardDescription>
             
             {/* Progress indicator */}

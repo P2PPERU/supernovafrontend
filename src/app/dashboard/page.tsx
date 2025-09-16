@@ -67,7 +67,7 @@ export default function DashboardPage() {
             </div>
             
             <p className="text-xl md:text-2xl text-gray-200 leading-relaxed mb-6">
-              Te traemos los <span className="text-poker-gold font-bold">mejores tratos de Poker</span>
+              Te traemos los <span className="text-poker-gold font-bold">mejores acuerdos de Poker</span>
             </p>
             
             <p className="text-lg text-gray-300 mb-8">

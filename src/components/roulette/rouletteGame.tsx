@@ -800,7 +800,7 @@ export function RouletteGame() {
                   <p className="text-xs md:text-sm text-white font-medium truncate">{prize.name}</p>
                   <div className="flex items-center gap-2 mt-1">
                     {prize.prize_value > 0 && (
-                      <span className="text-xs text-green-400 font-bold">${prize.prize_value}</span>
+                      <span className="text-xs text-green-400 font-bold">S/. {prize.prize_value}</span>
                     )}
                     <span className="text-xs text-gray-500">
                       {prize.probability}%
@@ -912,7 +912,7 @@ export function RouletteGame() {
                       transition={{ delay: 0.6, duration: 0.5, type: "spring" }}
                       className="text-2xl md:text-4xl text-green-400 font-bold mb-3 md:mb-4"
                     >
-                      ${wonPrize.prize_value}
+                      S/. {wonPrize.prize_value}
                     </motion.p>
                   )}
                   

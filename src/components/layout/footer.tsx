@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,8 +73,14 @@ export function Footer() {
           {/* Logo and description */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center space-x-3">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-poker-green to-poker-darkGreen flex items-center justify-center">
-                <span className="text-white font-bold text-xl">♠</span>
+              <div className="relative h-12 w-12">
+                <Image
+                  src="/images/supernova-logo.png"
+                  alt="Supernova Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
               <span className="font-bold text-2xl gradient-text">SUPERNOVA</span>
             </div>
@@ -201,21 +208,12 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Certification section - Simplified */}
+        {/* Responsible Gaming section */}
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
-              <p className="text-sm text-gray-400 mb-3">Certificaciones y Seguridad</p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                <div className="glass px-4 py-2 rounded-lg">
-                  <span className="text-xs">🔒 SSL Seguro</span>
-                </div>
-                <div className="glass px-4 py-2 rounded-lg">
-                  <span className="text-xs">🔞 18+ Juego Responsable</span>
-                </div>
-                <div className="glass px-4 py-2 rounded-lg">
-                  <span className="text-xs">✅ Licencia Oficial</span>
-                </div>
+              <div className="glass px-6 py-3 rounded-lg inline-block">
+                <span className="text-sm font-medium">🔞 +18 Juega con Responsabilidad</span>
               </div>
             </div>
             

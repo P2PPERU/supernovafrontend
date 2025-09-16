@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Copy, Trash2, Download, Filter, Ticket } from 'lucide-react';
+import { Plus, Copy, Trash2, Download, Filter, Ticket, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface RouletteCode {
@@ -29,6 +29,7 @@ export function CodesManager() {
   const [filter, setFilter] = useState<'all' | 'active' | 'used' | 'expired'>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hideUsedCodes, setHideUsedCodes] = useState(true); // Nueva state para ocultar códigos usados
 
   // IMPORTANTE: Obtener la URL base correcta
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -41,9 +42,9 @@ export function CodesManager() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      // URL CORREGIDA
+      // Cambiar limit a 10 códigos por página
       const response = await fetch(
-        `${API_URL}/roulette/codes?status=${filter}&page=${page}&limit=20`,
+        `${API_URL}/roulette/codes?status=${filter}&page=${page}&limit=10`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -67,7 +68,6 @@ export function CodesManager() {
   const createCodes = async (data: any) => {
     try {
       const token = localStorage.getItem('token');
-      // URL CORREGIDA
       const response = await fetch(`${API_URL}/roulette/codes`, {
         method: 'POST',
         headers: {
@@ -103,7 +103,6 @@ export function CodesManager() {
 
     try {
       const token = localStorage.getItem('token');
-      // URL CORREGIDA
       const response = await fetch(`${API_URL}/roulette/codes/${codeId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -121,7 +120,11 @@ export function CodesManager() {
     }
   };
 
-  // Resto del componente igual...
+  // Filtrar códigos para ocultar los usados si está activado
+  const filteredCodes = hideUsedCodes 
+    ? codes.filter(code => !code.used_at) 
+    : codes;
+
   const exportCodes = () => {
     const activeCodesText = codes
       .filter(c => c.is_active && !c.used_at)
@@ -265,27 +268,45 @@ export function CodesManager() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2">
-          {(['all', 'active', 'used', 'expired'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => {
-                setFilter(status);
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                filter === status
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              {status === 'all' && 'Todos'}
-              {status === 'active' && 'Activos'}
-              {status === 'used' && 'Usados'}
-              {status === 'expired' && 'Expirados'}
-            </button>
-          ))}
+        {/* Filters y toggle para ocultar códigos usados */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            {(['all', 'active', 'used', 'expired'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setFilter(status);
+                  setPage(1);
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  filter === status
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                {status === 'all' && 'Todos'}
+                {status === 'active' && 'Activos'}
+                {status === 'used' && 'Usados'}
+                {status === 'expired' && 'Expirados'}
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle para ocultar/mostrar códigos usados */}
+          <button
+            onClick={() => setHideUsedCodes(!hideUsedCodes)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              hideUsedCodes 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+            title={hideUsedCodes ? 'Mostrar códigos usados' : 'Ocultar códigos usados'}
+          >
+            {hideUsedCodes ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <span className="text-sm">
+              {hideUsedCodes ? 'Mostrar usados' : 'Ocultar usados'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -316,14 +337,17 @@ export function CodesManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {codes.length === 0 ? (
+              {filteredCodes.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    No hay códigos disponibles
+                    {hideUsedCodes && codes.some(code => code.used_at) 
+                      ? 'No hay códigos disponibles (códigos usados ocultos)'
+                      : 'No hay códigos disponibles'
+                    }
                   </td>
                 </tr>
               ) : (
-                codes.map((code) => (
+                filteredCodes.map((code) => (
                   <tr key={code.id} className="hover:bg-gray-800/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -373,26 +397,51 @@ export function CodesManager() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination mejorada */}
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-gray-800/30 flex items-center justify-between">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
-            >
-              Anterior
-            </button>
-            <span className="text-gray-400">
-              Página {page} de {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
-            >
-              Siguiente
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
+              >
+                ««
+              </button>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
+              >
+                ‹ Anterior
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">
+                Página {page} de {totalPages}
+              </span>
+              <span className="text-gray-500 text-sm">
+                (10 códigos por página)
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
+              >
+                Siguiente ›
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded transition-colors"
+              >
+                »»
+              </button>
+            </div>
           </div>
         )}
       </div>

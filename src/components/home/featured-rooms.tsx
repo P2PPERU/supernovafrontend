@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Star, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { getFeaturedRooms } from '@/data/rooms-mock';
+import { getFeaturedRooms, getRakebackDisplay } from '@/data/rooms-mock';
 
 export function FeaturedRooms() {
   const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export function FeaturedRooms() {
               Salas de Poker <span className="gradient-text">Destacadas</span>
             </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Juega en las mejores salas con los mejores rakebacks del mercado y giros exclusivos en nuestra ruleta
+              Juega en las mejores salas con el mejor Rakeback del mercado y giros exclusivos en nuestra ruleta
             </p>
           </motion.div>
         </div>
@@ -193,7 +193,7 @@ export function FeaturedRooms() {
                       <div className="space-y-2 mb-4 sm:mb-6">
                         <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/5">
                           <span className="text-xs sm:text-sm text-gray-400">Rakeback</span>
-                          <span className="font-semibold text-poker-green text-sm sm:text-base">{room.rakeback.percentage}%</span>
+                          <span className="font-semibold text-poker-green text-sm sm:text-base">{getRakebackDisplay(room)}</span>
                         </div>
                         <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/5">
                           <span className="text-xs sm:text-sm text-gray-400">Ruleta</span>

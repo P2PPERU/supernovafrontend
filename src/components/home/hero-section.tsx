@@ -96,7 +96,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl font-bold mb-6"
           >
-            Los mejores tratos de Poker
+            Los mejores acuerdos de Poker
             <br />
             <span className="gradient-text">Para todos tus clientes</span>
           </motion.h1>
@@ -226,7 +226,7 @@ export function HeroSection() {
               <svg className="h-5 w-5 text-poker-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Licencia Oficial
+              Miles de manos diarias
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <svg className="h-5 w-5 text-poker-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">

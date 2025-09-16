@@ -13,72 +13,58 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useUpdateUserBalance } from '@/hooks/admin/useUsers';
+//import { useUpdateUserCredit } from '@/hooks/admin/useUsers';
 import { User } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { DollarSign, Plus, Minus, Equal } from 'lucide-react';
 
-interface UserBalanceDialogProps {
+interface UserCreditDialogProps {
   open: boolean;
   onClose: () => void;
   user: User;
 }
 
-export function UserBalanceDialog({ open, onClose, user }: UserBalanceDialogProps) {
+export function UserCreditDialog({ open, onClose, user }: UserCreditDialogProps) {
   const [amount, setAmount] = useState('');
   const [operation, setOperation] = useState<'set' | 'add' | 'subtract'>('add');
-  const updateBalance = useUpdateUserBalance();
+  // const updateCredit = useUpdateUserCredit();
 
   const handleConfirm = () => {
     const value = parseFloat(amount);
     if (isNaN(value) || value < 0) return;
 
-    updateBalance.mutate(
-      { id: user.id, balance: value, operation },
-      {
-        onSuccess: () => {
-          onClose();
-          setAmount('');
-          setOperation('add');
-        },
-      }
-    );
+    // updateCredit.mutate(
+    //   { id: user.id, amount: value, operation },
+    //   {
+    //     onSuccess: () => {
+    //       onClose();
+    //       setAmount('');
+    //       setOperation('add');
+    //     },
+    //   }
+    // );
+
+    // Por ahora solo cerramos el diálogo
+    onClose();
+    setAmount('');
+    setOperation('add');
   };
 
-  const getNewBalance = () => {
+  const getEstimatedAmount = () => {
     const value = parseFloat(amount) || 0;
-    switch (operation) {
-      case 'set':
-        return value;
-      case 'add':
-        return user.balance + value;
-      case 'subtract':
-        return Math.max(0, user.balance - value);
-      default:
-        return user.balance;
-    }
+    return value;
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modificar Balance</DialogTitle>
+          <DialogTitle>Modificar Créditos</DialogTitle>
           <DialogDescription>
-            Actualiza el balance de <span className="font-semibold">{user.username}</span>
+            Actualiza los créditos de <span className="font-semibold">{user.username}</span>
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Balance actual</Label>
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
-              <DollarSign className="h-5 w-5" />
-              <span className="text-lg font-semibold">
-                {formatCurrency(user.balance)}
-              </span>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label>Operación</Label>
             <RadioGroup value={operation} onValueChange={(v: any) => setOperation(v)}>
@@ -86,21 +72,21 @@ export function UserBalanceDialog({ open, onClose, user }: UserBalanceDialogProp
                 <RadioGroupItem value="add" id="add" />
                 <Label htmlFor="add" className="flex items-center gap-2 cursor-pointer">
                   <Plus className="h-4 w-4 text-green-600" />
-                  Agregar al balance
+                  Agregar créditos
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="subtract" id="subtract" />
                 <Label htmlFor="subtract" className="flex items-center gap-2 cursor-pointer">
                   <Minus className="h-4 w-4 text-red-600" />
-                  Restar del balance
+                  Restar créditos
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="set" id="set" />
                 <Label htmlFor="set" className="flex items-center gap-2 cursor-pointer">
                   <Equal className="h-4 w-4 text-blue-600" />
-                  Establecer balance
+                  Establecer créditos
                 </Label>
               </div>
             </RadioGroup>
@@ -127,9 +113,13 @@ export function UserBalanceDialog({ open, onClose, user }: UserBalanceDialogProp
 
           {amount && !isNaN(parseFloat(amount)) && (
             <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-              <p className="text-sm font-medium">Nuevo balance:</p>
+              <p className="text-sm font-medium">
+                {operation === 'add' && 'Créditos a agregar:'}
+                {operation === 'subtract' && 'Créditos a restar:'}
+                {operation === 'set' && 'Créditos a establecer:'}
+              </p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {formatCurrency(getNewBalance())}
+                {formatCurrency(getEstimatedAmount())}
               </p>
             </div>
           )}
@@ -141,13 +131,14 @@ export function UserBalanceDialog({ open, onClose, user }: UserBalanceDialogProp
           <Button
             onClick={handleConfirm}
             disabled={
-              updateBalance.isPending ||
+              // updateCredit.isPending ||
               !amount ||
               isNaN(parseFloat(amount)) ||
               parseFloat(amount) < 0
             }
           >
-            {updateBalance.isPending ? 'Actualizando...' : 'Confirmar'}
+            {/* {updateCredit.isPending ? 'Actualizando...' : 'Confirmar'} */}
+            Confirmar
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -12,7 +12,7 @@ export const roomsMockData: Room[] = [
       to: 'to-yellow-700'
     },
     description: 'SUPREMA POKER es la sala líder en rakeback del mercado latinoamericano. Con el porcentaje más alto de retorno y beneficios exclusivos para jugadores VIP, es la elección preferida de profesionales que buscan maximizar sus ganancias.',
-    shortDescription: 'El rakeback más alto del mercado - hasta 70%',
+    shortDescription: 'El rakeback más alto del mercado - Trato vip%',
     rating: 4.9,
     totalReviews: 1847,
     activePlayers: '1.4K',
@@ -54,32 +54,32 @@ export const roomsMockData: Room[] = [
       ]
     },
     rakeback: {
-      percentage: 70,
+      percentage: 0, // Usamos 0 para indicar trato VIP especial
       type: 'vip-based',
       tiers: [
         {
           level: 'VIP Suprema',
-          percentage: 70,
+          percentage: 0, // 0 indica trato VIP especial
           requirements: 'Acceso directo por SUPERNOVA'
         },
         {
           level: 'Gold',
-          percentage: 60,
+          percentage: 0,
           requirements: 'S/1000 en rake mensual'
         },
         {
           level: 'Platinum',
-          percentage: 65,
+          percentage: 0,
           requirements: 'S/3000 en rake mensual'
         },
         {
           level: 'Diamond',
-          percentage: 70,
+          percentage: 0,
           requirements: 'S/8000 en rake mensual'
         }
       ],
       frequency: 'instant',
-      description: 'Rakeback instantáneo del 70% - el más alto del mercado'
+      description: 'Trato VIP - Beneficios exclusivos garantizados'
     },
     features: [
       {
@@ -219,32 +219,32 @@ export const roomsMockData: Room[] = [
       ]
     },
     rakeback: {
-      percentage: 70,
-      type: 'progressive',
+      percentage: 0, // Usamos 0 para indicar trato VIP especial
+      type: 'vip-based',
       tiers: [
         {
           level: 'Bronce',
-          percentage: 30,
+          percentage: 0, // 0 indica trato VIP especial
           requirements: 'Desde el primer día'
         },
         {
           level: 'Plata',
-          percentage: 45,
+          percentage: 0,
           requirements: 'S/500 en rake mensual'
         },
         {
           level: 'Oro',
-          percentage: 60,
+          percentage: 0,
           requirements: 'S/2000 en rake mensual'
         },
         {
           level: 'Platino',
-          percentage: 70,
+          percentage: 0,
           requirements: 'S/5000 en rake mensual'
         }
       ],
       frequency: 'daily',
-      description: 'Rakeback diario progresivo hasta 70%'
+      description: 'Trato VIP - Beneficios exclusivos diarios'
     },
     features: [
       {
@@ -328,7 +328,7 @@ export const roomsMockData: Room[] = [
       'Fast fold poker único en el mercado',
       'Pagos en menos de 24 horas',
       'Software estable y seguro',
-      'Rakeback progresivo hasta 70%'
+      'Trato VIP exclusivo'
     ],
     cons: [
       'Requiere verificación KYC completa',
@@ -395,10 +395,10 @@ export const roomsMockData: Room[] = [
       ]
     },
     rakeback: {
-      percentage: 55,
+      percentage: 40,
       type: 'fixed',
       frequency: 'weekly',
-      description: '55% de rakeback fijo pagado cada semana'
+      description: '40% de rakeback fijo pagado cada semana'
     },
     features: [
       {
@@ -465,7 +465,7 @@ export const roomsMockData: Room[] = [
       'Gran variedad de juegos y límites',
       'Freerolls diarios garantizados',
       'Comunidad activa y amigable',
-      'Rakeback sólido del 55%'
+      'Rakeback fijo del 40% semanal'
     ],
     cons: [
       'Software puede ser lento en horas pico',
@@ -528,32 +528,32 @@ export const roomsMockData: Room[] = [
       ]
     },
     rakeback: {
-      percentage: 70,
+      percentage: 0, // Usamos 0 para indicar trato VIP especial
       type: 'vip-based',
       tiers: [
         {
           level: 'VIP 1',
-          percentage: 25,
+          percentage: 0, // 0 indica trato VIP especial
           requirements: 'Registro'
         },
         {
           level: 'VIP 2',
-          percentage: 35,
+          percentage: 0,
           requirements: '100 puntos VIP'
         },
         {
           level: 'VIP 3',
-          percentage: 55,
+          percentage: 0,
           requirements: '500 puntos VIP'
         },
         {
           level: 'VIP 4',
-          percentage: 70,
+          percentage: 0,
           requirements: '2000 puntos VIP'
         }
       ],
       frequency: 'instant',
-      description: 'Sistema VIP con rakeback hasta 70%'
+      description: 'Trato VIP - Sistema exclusivo con beneficios instantáneos'
     },
     features: [
       {
@@ -620,7 +620,7 @@ export const roomsMockData: Room[] = [
       'Mejor experiencia móvil disponible',
       'Interfaz intuitiva y moderna',
       'Sistema de clubs y comunidades',
-      'Rakeback competitivo hasta 70%'
+      'Trato VIP exclusivo'
     ],
     cons: [
       'Enfocado principalmente en móvil',
@@ -683,10 +683,10 @@ export const roomsMockData: Room[] = [
       ]
     },
     rakeback: {
-      percentage: 45,
+      percentage: 0, // 0 indica que no hay rakeback
       type: 'fixed',
       frequency: 'weekly',
-      description: '45% de rakeback + programa de recompensas WPT'
+      description: 'Sin programa de rakeback - enfoque en torneos y eventos premium'
     },
     features: [
       {
@@ -758,7 +758,7 @@ export const roomsMockData: Room[] = [
     cons: [
       'Enfocado en jugadores experimentados',
       'Depósito mínimo más alto',
-      'Rakeback más conservador (45%)'
+      'Sin programa de rakeback'
     ],
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-12-15T00:00:00Z'
@@ -782,7 +782,7 @@ export const getRoomsByCategory = (category: RoomCategory): Room[] => {
   // Lógica de categorización basada en características
   switch (category) {
     case RoomCategory.HIGH_RAKEBACK:
-      return roomsMockData.filter(room => room.rakeback.percentage >= 50);
+      return roomsMockData.filter(room => room.rakeback.percentage >= 30);
     case RoomCategory.POPULAR:
       return roomsMockData.filter(room => parseInt(room.activePlayers.replace(/[^0-9]/g, '')) > 1000);
     case RoomCategory.PREMIUM:
@@ -790,4 +790,15 @@ export const getRoomsByCategory = (category: RoomCategory): Room[] => {
     default:
       return roomsMockData;
   }
+};
+
+// Helper function to display rakeback info
+export const getRakebackDisplay = (room: Room): string => {
+  if (!room.rakeback || room.rakeback.percentage === 0) {
+    if (room.id === 'wpt') {
+      return '25%';
+    }
+    return 'Trato VIP';
+  }
+  return `${room.rakeback.percentage}%`;
 };

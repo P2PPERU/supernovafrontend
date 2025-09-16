@@ -29,7 +29,7 @@ const features = [
     description: 'El rakeback más alto del Perú. Pago automático cada lunes directo a tu bankroll.',
     icon: Percent,
     color: 'from-purple-500 to-pink-600',
-    highlight: 'Hasta 70% rakeback',
+    highlight: 'Trato vip de rakeback',
     stats: 'Pago cada lunes',
     pokerTerm: 'VIP Program',
   },
@@ -104,7 +104,7 @@ const stats = [
   },
   {
     icon: Percent,
-    value: '70%',
+    value: 'Acuerdo VIP en privado',
     label: 'Rakeback Máximo',
     color: 'text-poker-purple',
     subText: 'Pago semanal',

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MessageCircle, Star, Users, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { getRoomBySlug } from '@/data/rooms-mock';
+import { getRoomBySlug, getRakebackDisplay } from '@/data/rooms-mock';
 
 export default function RoomDetailPage() {
   const params = useParams();
@@ -128,7 +128,7 @@ export default function RoomDetailPage() {
               
               <div className="flex items-center gap-1 md:gap-2">
                 <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
-                <span className="text-blue-500 font-semibold">{room.rakeback?.percentage || '25'}%</span>
+                <span className="text-blue-500 font-semibold">{getRakebackDisplay(room)}</span>
                 <span className="text-gray-400 hidden sm:inline">rakeback</span>
               </div>
             </div>
@@ -160,14 +160,14 @@ export default function RoomDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                   <div className="text-center p-4 md:p-6 rounded-lg bg-gradient-to-br from-poker-green/10 to-transparent border border-poker-green/20">
                     <div className="text-xl md:text-2xl font-bold text-poker-green mb-1 md:mb-2">
-                      {room.rakeback?.percentage || '25'}%
+                      {getRakebackDisplay(room)}
                     </div>
                     <div className="text-xs md:text-sm text-gray-400">Rakeback Exclusivo</div>
                   </div>
                   
                   <div className="text-center p-4 md:p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20">
                     <div className="text-xl md:text-2xl font-bold text-blue-500 mb-1 md:mb-2">
-                      {room.bonus?.welcome?.currency || 'S/'}{room.bonus?.welcome?.maxBonus?.toLocaleString() || '1000'}
+                      {room.bonus?.welcome?.currency || 'S/'}{room.bonus?.welcome?.maxBonus || '1,000'}
                     </div>
                     <div className="text-xs md:text-sm text-gray-400">Bono de Bienvenida</div>
                   </div>

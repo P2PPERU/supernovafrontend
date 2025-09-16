@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SUPERNOVA - Los mejores tratos de Poker',
+  title: 'SUPERNOVA - Los mejores acuerdos de Poker',
   description: 'Únete a las mejores Uniones de poker online con torneos, ruleta y rankings',
   keywords: 'poker, casino, ruleta, torneos, rankings',
   icons: {
